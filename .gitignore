@@ -1,0 +1,38 @@
+# Python/Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+school.db
+*.sqlite3
+
+# Node.js/Frontend
+node_modules/
+dist/
+.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor and IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Build artifacts
+*.bak
+*.swp
+*~.nib
