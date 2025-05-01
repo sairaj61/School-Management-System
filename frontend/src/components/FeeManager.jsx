@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert } from '@mui/material';
+import {
+  Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
 
@@ -12,16 +15,18 @@ const MONTHS = [
 const FeeManager = () => {
   const [payments, setPayments] = useState([]);
   const [students, setStudents] = useState([]);
-  const [newPayment, setNewPayment] = useState({
+  const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [formData, setFormData] = useState({
     student_id: '',
     month: 'JAN',
     tuition_fees: '',
     auto_fees: '',
     day_boarding_fees: ''
   });
-  const [editingPayment, setEditingPayment] = useState(null);
-  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPayments();
@@ -56,9 +61,44 @@ const FeeManager = () => {
     }
   };
 
+  const handleModalOpen = (payment = null) => {
+    if (payment) {
+      setSelectedPayment(payment);
+      setFormData({
+        student_id: payment.student_id,
+        month: payment.month,
+        tuition_fees: parseFloat(payment.tuition_fees).toString(),
+        auto_fees: parseFloat(payment.auto_fees).toString(),
+        day_boarding_fees: parseFloat(payment.day_boarding_fees).toString()
+      });
+    } else {
+      setSelectedPayment(null);
+      setFormData({
+        student_id: '',
+        month: 'JAN',
+        tuition_fees: '',
+        auto_fees: '',
+        day_boarding_fees: ''
+      });
+    }
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedPayment(null);
+    setFormData({
+      student_id: '',
+      month: 'JAN',
+      tuition_fees: '',
+      auto_fees: '',
+      day_boarding_fees: ''
+    });
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewPayment(prev => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -68,44 +108,26 @@ const FeeManager = () => {
     e.preventDefault();
     try {
       const paymentData = {
-        student_id: newPayment.student_id,
-        month: newPayment.month,
-        tuition_fees: parseInt(newPayment.tuition_fees) || 0,
-        auto_fees: parseInt(newPayment.auto_fees) || 0,
-        day_boarding_fees: parseInt(newPayment.day_boarding_fees) || 0
+        student_id: formData.student_id,
+        month: formData.month,
+        tuition_fees: parseInt(formData.tuition_fees) || 0,
+        auto_fees: parseInt(formData.auto_fees) || 0,
+        day_boarding_fees: parseInt(formData.day_boarding_fees) || 0
       };
 
-      if (editingPayment) {
-        await axios.put(`http://localhost:8000/fee_payments/${editingPayment.id}`, paymentData);
+      if (selectedPayment) {
+        await axios.put(`http://localhost:8000/fee_payments/${selectedPayment.id}`, paymentData);
         setAlert({ open: true, message: 'Payment updated successfully!', severity: 'success' });
       } else {
         await axios.post('http://localhost:8000/fee_payments/', paymentData);
         setAlert({ open: true, message: 'Payment added successfully!', severity: 'success' });
       }
 
-      setNewPayment({
-        student_id: '',
-        month: 'JAN',
-        tuition_fees: '',
-        auto_fees: '',
-        day_boarding_fees: ''
-      });
-      setEditingPayment(null);
+      handleModalClose();
       fetchPayments();
     } catch (error) {
       handleApiError(error, setAlert);
     }
-  };
-
-  const handleEdit = (payment) => {
-    setEditingPayment(payment);
-    setNewPayment({
-      student_id: payment.student_id,
-      month: payment.month,
-      tuition_fees: parseFloat(payment.tuition_fees).toString(),
-      auto_fees: parseFloat(payment.auto_fees).toString(),
-      day_boarding_fees: parseFloat(payment.day_boarding_fees).toString()
-    });
   };
 
   const handleDelete = async (id) => {
@@ -119,6 +141,12 @@ const FeeManager = () => {
       }
     }
   };
+
+  const filteredPayments = payments.filter(payment => {
+    const student = students.find(s => s.id === payment.student_id);
+    const searchString = (student?.name || '').toLowerCase();
+    return searchString.includes(searchTerm.toLowerCase());
+  });
 
   const columns = [
     {
@@ -196,7 +224,7 @@ const FeeManager = () => {
             variant="contained"
             color="primary"
             size="small"
-            onClick={() => handleEdit(params.row)}
+            onClick={() => handleModalOpen(params.row)}
             sx={{ mr: 1 }}
           >
             Edit
@@ -216,117 +244,31 @@ const FeeManager = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {editingPayment ? 'Edit Fee Payment' : 'Add Fee Payment'}
-      </Typography>
-
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Student"
-              name="student_id"
-              value={newPayment.student_id}
-              onChange={handleInputChange}
-              required
-            >
-              {students.map((student) => (
-                <MenuItem key={student.id} value={student.id}>
-                  {student.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Month"
-              name="month"
-              value={newPayment.month}
-              onChange={handleInputChange}
-              required
-            >
-              {MONTHS.map((month) => (
-                <MenuItem key={month} value={month}>
-                  {month}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Tuition Fees"
-              name="tuition_fees"
-              type="number"
-              value={newPayment.tuition_fees}
-              onChange={handleInputChange}
-              required
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Auto Fees"
-              name="auto_fees"
-              type="number"
-              value={newPayment.auto_fees}
-              onChange={handleInputChange}
-              required
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Day Boarding Fees"
-              name="day_boarding_fees"
-              type="number"
-              value={newPayment.day_boarding_fees}
-              onChange={handleInputChange}
-              required
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ mr: 1 }}
-            >
-              {editingPayment ? 'Update' : 'Add'} Payment
-            </Button>
-            {editingPayment && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  setEditingPayment(null);
-                  setNewPayment({
-                    student_id: '',
-                    month: 'JAN',
-                    tuition_fees: '',
-                    auto_fees: '',
-                    day_boarding_fees: ''
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-          </Grid>
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs>
+          <Typography variant="h4">Fee Payments</Typography>
         </Grid>
-      </form>
+        <Grid item>
+          <TextField
+            size="small"
+            placeholder="Search by student name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() => handleModalOpen()}
+          >
+            Add Payment
+          </Button>
+        </Grid>
+      </Grid>
 
-      <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>Fee Payments List</Typography>
       <div style={{ height: 400, width: '100%' }}>
         <DataGrid
-          rows={payments}
+          rows={filteredPayments}
           columns={columns}
           pageSize={5}
           rowsPerPageOptions={[5]}
@@ -335,6 +277,100 @@ const FeeManager = () => {
           getRowId={(row) => row.id}
         />
       </div>
+
+      <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {selectedPayment ? 'Edit Payment' : 'Add Payment'}
+          <Button
+            onClick={handleModalClose}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Student"
+                  name="student_id"
+                  value={formData.student_id}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {students.map((student) => (
+                    <MenuItem key={student.id} value={student.id}>
+                      {student.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Month"
+                  name="month"
+                  value={formData.month}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {MONTHS.map((month) => (
+                    <MenuItem key={month} value={month}>
+                      {month}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Tuition Fees"
+                  name="tuition_fees"
+                  type="number"
+                  value={formData.tuition_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Auto Fees"
+                  name="auto_fees"
+                  type="number"
+                  value={formData.auto_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Day Boarding Fees"
+                  name="day_boarding_fees"
+                  type="number"
+                  value={formData.day_boarding_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleModalClose}>Cancel</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {selectedPayment ? 'Update' : 'Add'} Payment
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       <Snackbar
         open={alert.open}
