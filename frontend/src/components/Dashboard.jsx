@@ -8,7 +8,12 @@ import { DataGrid } from '@mui/x-data-grid';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
-  const [dashboard, setDashboard] = useState({ total_students: 0, total_payments: 0, total_dues: 0, students_with_payments: [] });
+  const [dashboard, setDashboard] = useState({
+    total_students: 0,
+    total_payments: "0.00",
+    total_dues: "0.00",
+    students_with_payments: []
+  });
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -28,28 +33,65 @@ const Dashboard = () => {
     setAlert({ ...alert, open: false });
   };
 
+  // Convert string amounts to numbers for the chart
   const chartData = {
     labels: dashboard.students_with_payments.map(item => item.name),
     datasets: [
       {
         label: 'Total Paid',
-        data: dashboard.students_with_payments.map(item => item.total_paid),
+        data: dashboard.students_with_payments.map(item => parseFloat(item.total_paid)),
         backgroundColor: 'rgba(75, 192, 192, 0.6)',
       },
       {
         label: 'Total Balance',
-        data: dashboard.students_with_payments.map(item => item.total_balance),
+        data: dashboard.students_with_payments.map(item => parseFloat(item.total_balance)),
         backgroundColor: 'rgba(255, 99, 132, 0.6)',
       },
     ],
   };
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Name', width: 150 },
-    { field: 'total_paid', headerName: 'Total Paid', width: 120, valueFormatter: ({ value }) => `$${value.toFixed(2)}` },
-    { field: 'total_balance', headerName: 'Total Balance', width: 120, valueFormatter: ({ value }) => `$${value.toFixed(2)}` },
-    { field: 'payment_status', headerName: 'Status', width: 120 },
+    { 
+      field: 'id', 
+      headerName: 'ID', 
+      width: 300, // Increased width for UUID
+      valueFormatter: ({ value }) => value.toString()
+    },
+    { 
+      field: 'name', 
+      headerName: 'Name', 
+      width: 150 
+    },
+    { 
+      field: 'total_paid', 
+      headerName: 'Total Paid', 
+      width: 120,
+      valueFormatter: ({ value }) => `₹${parseFloat(value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    { 
+      field: 'total_balance', 
+      headerName: 'Total Balance', 
+      width: 120,
+      valueFormatter: ({ value }) => `₹${parseFloat(value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    { 
+      field: 'payment_status', 
+      headerName: 'Status', 
+      width: 120,
+      renderCell: (params) => (
+        <Typography
+          color={params.value === 'Paid' ? 'success.main' : 'error.main'}
+        >
+          {params.value}
+        </Typography>
+      )
+    },
   ];
 
   return (
@@ -68,7 +110,12 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6">Total Payments</Typography>
-              <Typography variant="h4">${dashboard.total_payments.toFixed(2)}</Typography>
+              <Typography variant="h4">
+                ₹{parseFloat(dashboard.total_payments).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -76,7 +123,12 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6">Total Dues</Typography>
-              <Typography variant="h4">${dashboard.total_dues.toFixed(2)}</Typography>
+              <Typography variant="h4">
+                ₹{parseFloat(dashboard.total_dues).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -88,13 +140,25 @@ const Dashboard = () => {
               columns={columns}
               pageSizeOptions={[5]}
               disableRowSelectionOnClick
+              getRowId={(row) => row.id}
             />
           </div>
         </Grid>
         <Grid item xs={12}>
           <Typography variant="h5" gutterBottom>Payment Breakdown</Typography>
           <div style={{ height: 400, width: '100%' }}>
-            <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
+            <Bar data={chartData} options={{ 
+              responsive: true, 
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: (value) => `₹${value}`
+                  }
+                }
+              }
+            }} />
           </div>
         </Grid>
       </Grid>
