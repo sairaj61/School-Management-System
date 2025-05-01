@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import re
 from decimal import Decimal
+from uuid import UUID
 from models import Month
 
 # Base Models
@@ -29,7 +30,7 @@ class AcademicYearUpdate(AcademicYearBase):
     pass
 
 class AcademicYear(AcademicYearBase):
-    id: int
+    id: UUID
     is_active: bool
 
     class Config:
@@ -49,31 +50,31 @@ class StudentBase(BaseModel):
     day_boarding_fees: Decimal = Field(..., ge=0)
 
 class StudentCreate(StudentBase):
-    class_id: int = Field(..., gt=0)
-    section_id: int = Field(..., gt=0)
-    academic_year_id: int = Field(..., gt=0)
+    class_id: UUID
+    section_id: UUID
+    academic_year_id: UUID
 
 class StudentUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    roll_number: Optional[str] = Field(None, min_length=1, max_length=20)
-    father_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    mother_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    date_of_birth: Optional[str]
-    contact: Optional[str] = Field(None, min_length=10, max_length=15)
-    address: Optional[str] = Field(None, min_length=1, max_length=200)
-    enrollment_date: Optional[str]
-    tuition_fees: Optional[Decimal] = Field(None, ge=0)
-    auto_fees: Optional[Decimal] = Field(None, ge=0)
-    day_boarding_fees: Optional[Decimal] = Field(None, ge=0)
-    class_id: Optional[int] = Field(None, gt=0)
-    section_id: Optional[int] = Field(None, gt=0)
-    academic_year_id: Optional[int] = Field(None, gt=0)
+    name: Optional[str] = None
+    roll_number: Optional[str] = None
+    father_name: Optional[str] = None
+    mother_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    contact: Optional[str] = None
+    address: Optional[str] = None
+    enrollment_date: Optional[str] = None
+    tuition_fees: Optional[Decimal] = None
+    auto_fees: Optional[Decimal] = None
+    day_boarding_fees: Optional[Decimal] = None
+    class_id: Optional[UUID] = None
+    section_id: Optional[UUID] = None
+    academic_year_id: Optional[UUID] = None
 
 class StudentResponse(StudentBase):
-    id: int
-    class_id: int
-    section_id: int
-    academic_year_id: int
+    id: UUID
+    class_id: UUID
+    section_id: UUID
+    academic_year_id: UUID
 
     class Config:
         orm_mode = True
@@ -82,15 +83,15 @@ class ClassBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
 
 class ClassCreate(ClassBase):
-    academic_year_id: int = Field(..., gt=0)
+    academic_year_id: UUID
 
 class ClassUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=50)
-    academic_year_id: Optional[int] = Field(None, gt=0)
+    name: Optional[str] = None
+    academic_year_id: Optional[UUID] = None
 
 class ClassResponse(ClassBase):
-    id: int
-    academic_year_id: int
+    id: UUID
+    academic_year_id: UUID
 
     class Config:
         orm_mode = True
@@ -99,15 +100,15 @@ class SectionBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
 
 class SectionCreate(SectionBase):
-    class_id: int = Field(..., gt=0)
+    class_id: UUID
 
 class SectionUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=50)
-    class_id: Optional[int] = Field(None, gt=0)
+    name: Optional[str] = None
+    class_id: Optional[UUID] = None
 
 class SectionResponse(SectionBase):
-    id: int
-    class_id: int
+    id: UUID
+    class_id: UUID
 
     class Config:
         orm_mode = True
@@ -119,18 +120,18 @@ class FeePaymentBase(BaseModel):
     day_boarding_fees: Decimal = Field(..., ge=0)
 
 class FeePaymentCreate(FeePaymentBase):
-    student_id: int = Field(..., gt=0)
+    student_id: UUID
 
 class FeePaymentUpdate(BaseModel):
-    month: Optional[Month]
-    tuition_fees: Optional[Decimal] = Field(None, ge=0)
-    auto_fees: Optional[Decimal] = Field(None, ge=0)
-    day_boarding_fees: Optional[Decimal] = Field(None, ge=0)
-    student_id: Optional[int] = Field(None, gt=0)
+    month: Optional[Month] = None
+    tuition_fees: Optional[Decimal] = None
+    auto_fees: Optional[Decimal] = None
+    day_boarding_fees: Optional[Decimal] = None
+    student_id: Optional[UUID] = None
 
 class FeePaymentResponse(FeePaymentBase):
-    id: int
-    student_id: int
+    id: UUID
+    student_id: UUID
     total_amount: Decimal
     transaction_date: datetime
 
@@ -138,7 +139,7 @@ class FeePaymentResponse(FeePaymentBase):
         orm_mode = True
 
 class StudentPaymentInfo(BaseModel):
-    id: int
+    id: UUID
     name: str
     total_paid: Decimal
     total_balance: Decimal

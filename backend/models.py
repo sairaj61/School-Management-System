@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DECIMAL, Boolean, DateTime
+from sqlalchemy import Column, String, ForeignKey, Enum, DECIMAL, Boolean, DateTime
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
 from datetime import datetime
+from utils.uuid_generator import generate_time_based_uuid
 
 class Month(str, enum.Enum):
     JAN = "JAN"
@@ -20,7 +22,7 @@ class Month(str, enum.Enum):
 
 class AcademicYear(Base):
     __tablename__ = "academic_years"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     year = Column(String, unique=True, index=True)
     is_active = Column(Boolean, default=False)
     
@@ -30,7 +32,7 @@ class AcademicYear(Base):
 
 class Student(Base):
     __tablename__ = "students"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     name = Column(String, index=True)
     roll_number = Column(String, index=True)
     father_name = Column(String)
@@ -42,9 +44,9 @@ class Student(Base):
     tuition_fees = Column(DECIMAL(10, 2))
     auto_fees = Column(DECIMAL(10, 2))
     day_boarding_fees = Column(DECIMAL(10, 2))
-    class_id = Column(Integer, ForeignKey("classes.id"))
-    section_id = Column(Integer, ForeignKey("sections.id"))
-    academic_year_id = Column(Integer, ForeignKey("academic_years.id"))
+    class_id = Column(UUID(as_uuid=True), ForeignKey("classes.id"))
+    section_id = Column(UUID(as_uuid=True), ForeignKey("sections.id"))
+    academic_year_id = Column(UUID(as_uuid=True), ForeignKey("academic_years.id"))
 
     # Relationships
     class_ = relationship("Class", back_populates="students")
@@ -54,9 +56,9 @@ class Student(Base):
 
 class Class(Base):
     __tablename__ = "classes"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     name = Column(String, index=True)
-    academic_year_id = Column(Integer, ForeignKey("academic_years.id"))
+    academic_year_id = Column(UUID(as_uuid=True), ForeignKey("academic_years.id"))
     
     # Relationships
     academic_year = relationship("AcademicYear", back_populates="classes")
@@ -65,21 +67,21 @@ class Class(Base):
 
 class Section(Base):
     __tablename__ = "sections"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     name = Column(String, index=True)
-    class_id = Column(Integer, ForeignKey("classes.id"))
+    class_id = Column(UUID(as_uuid=True), ForeignKey("classes.id"))
     class_ = relationship("Class", back_populates="sections")
     students = relationship("Student", back_populates="section")
 
 class FeePayment(Base):
     __tablename__ = "fee_payments"
-    id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("students.id"))
     month = Column(Enum(Month))
-    tuition_fees = Column(DECIMAL(10, 2))  # Amount being paid for tuition
-    auto_fees = Column(DECIMAL(10, 2))     # Amount being paid for auto
-    day_boarding_fees = Column(DECIMAL(10, 2))  # Amount being paid for day boarding
-    total_amount = Column(DECIMAL(10, 2))  # Total of all fees being paid
+    tuition_fees = Column(DECIMAL(10, 2))
+    auto_fees = Column(DECIMAL(10, 2))
+    day_boarding_fees = Column(DECIMAL(10, 2))
+    total_amount = Column(DECIMAL(10, 2))
     transaction_date = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
