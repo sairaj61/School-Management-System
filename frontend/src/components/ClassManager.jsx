@@ -8,7 +8,11 @@ import {
   Grid,
   MenuItem,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -16,13 +20,15 @@ import { handleApiError } from '../utils/errorHandler';
 const ClassManager = () => {
   const [classes, setClasses] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
-  const [newClass, setNewClass] = useState({
+  const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [formData, setFormData] = useState({
     name: '',
     academic_year_id: ''
   });
-  const [editingClass, setEditingClass] = useState(null);
-  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchClasses();
@@ -50,10 +56,35 @@ const ClassManager = () => {
     }
   };
 
+  const handleModalOpen = (classItem = null) => {
+    if (classItem) {
+      setSelectedClass(classItem);
+      setFormData({
+        name: classItem.name,
+        academic_year_id: classItem.academic_year_id
+      });
+    } else {
+      setSelectedClass(null);
+      setFormData({
+        name: '',
+        academic_year_id: ''
+      });
+    }
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedClass(null);
+    setFormData({
+      name: '',
+      academic_year_id: ''
+    });
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Input change - ${name}:`, value);
-    setNewClass(prev => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -62,46 +93,24 @@ const ClassManager = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!newClass.academic_year_id) {
-        setAlert({
-          open: true,
-          message: 'Please select an academic year',
-          severity: 'error'
-        });
-        return;
-      }
-
       const classData = {
-        name: newClass.name.trim(),
-        academic_year_id: newClass.academic_year_id
+        name: formData.name.trim(),
+        academic_year_id: formData.academic_year_id
       };
 
-      console.log('Submitting class data:', classData);
-
-      if (editingClass) {
-        console.log('Updating class with ID:', editingClass.id);
-        await axios.put(`http://localhost:8000/classes/${editingClass.id}`, classData);
+      if (selectedClass) {
+        await axios.put(`http://localhost:8000/classes/${selectedClass.id}`, classData);
         setAlert({ open: true, message: 'Class updated successfully!', severity: 'success' });
       } else {
         await axios.post('http://localhost:8000/classes/', classData);
         setAlert({ open: true, message: 'Class added successfully!', severity: 'success' });
       }
 
-      setNewClass({ name: '', academic_year_id: '' });
-      setEditingClass(null);
+      handleModalClose();
       fetchClasses();
     } catch (error) {
-      console.error('Error data:', error.response?.data);
       handleApiError(error, setAlert);
     }
-  };
-
-  const handleEdit = (classItem) => {
-    setEditingClass(classItem);
-    setNewClass({
-      name: classItem.name,
-      academic_year_id: classItem.academic_year_id
-    });
   };
 
   const handleDelete = async (id) => {
@@ -115,6 +124,10 @@ const ClassManager = () => {
       }
     }
   };
+
+  const filteredClasses = classes.filter(cls => 
+    cls.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const columns = [
     { field: 'name', headerName: 'Name', width: 150 },
@@ -137,7 +150,7 @@ const ClassManager = () => {
             variant="contained"
             color="primary"
             size="small"
-            onClick={() => handleEdit(params.row)}
+            onClick={() => handleModalOpen(params.row)}
             sx={{ mr: 1 }}
           >
             Edit
@@ -157,71 +170,31 @@ const ClassManager = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {editingClass ? 'Edit Class' : 'Add Class'}
-      </Typography>
-
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Class Name"
-              name="name"
-              value={newClass.name}
-              onChange={handleInputChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Academic Year"
-              name="academic_year_id"
-              value={newClass.academic_year_id || ''}
-              onChange={handleInputChange}
-              required
-            >
-              <MenuItem value="">
-                <em>Select an academic year</em>
-              </MenuItem>
-              {academicYears.map((year) => (
-                <MenuItem key={year.id} value={year.id}>
-                  {year.year}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ mr: 1 }}
-            >
-              {editingClass ? 'Update' : 'Add'} Class
-            </Button>
-            {editingClass && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  setEditingClass(null);
-                  setNewClass({ name: '', academic_year_id: '' });
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-          </Grid>
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs>
+          <Typography variant="h4">Classes</Typography>
         </Grid>
-      </form>
+        <Grid item>
+          <TextField
+            size="small"
+            placeholder="Search classes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() => handleModalOpen()}
+          >
+            Add Class
+          </Button>
+        </Grid>
+      </Grid>
 
-      <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>Classes List</Typography>
       <div style={{ height: 400, width: '100%' }}>
         <DataGrid
-          rows={classes}
+          rows={filteredClasses}
           columns={columns}
           pageSize={5}
           rowsPerPageOptions={[5]}
@@ -230,6 +203,57 @@ const ClassManager = () => {
           getRowId={(row) => row.id}
         />
       </div>
+
+      <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {selectedClass ? 'Edit Class' : 'Add Class'}
+          <Button
+            onClick={handleModalClose}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Class Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Academic Year"
+                  name="academic_year_id"
+                  value={formData.academic_year_id}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {academicYears.map((year) => (
+                    <MenuItem key={year.id} value={year.id}>
+                      {year.year}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleModalClose}>Cancel</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {selectedClass ? 'Update' : 'Add'} Class
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       <Snackbar
         open={alert.open}
