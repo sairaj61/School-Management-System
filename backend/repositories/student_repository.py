@@ -3,6 +3,7 @@ from models import Student
 from schemas import StudentCreate, StudentUpdate
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
+from uuid import UUID
 
 class StudentRepository:
     def __init__(self, db: Session):
@@ -11,13 +12,13 @@ class StudentRepository:
     def get_all(self):
         return self.db.query(Student).all()
 
-    def get_by_id(self, student_id: int):
+    def get_by_id(self, student_id: UUID):
         return self.db.query(Student).filter(Student.id == student_id).first()
 
     def get_by_roll_number(self, roll_number: str):
         return self.db.query(Student).filter(Student.roll_number == roll_number).first()
 
-    def get_by_roll_number_in_class(self, roll_number: str, class_id: int):
+    def get_by_roll_number_in_class(self, roll_number: str, class_id: UUID):
         return self.db.query(Student).filter(
             Student.roll_number == roll_number,
             Student.class_id == class_id
@@ -46,7 +47,7 @@ class StudentRepository:
                 detail="Error creating student. Please check your input."
             )
 
-    def update(self, student_id: int, student: StudentUpdate):
+    def update(self, student_id: UUID, student: StudentUpdate):
         db_student = self.get_by_id(student_id)
         if not db_student:
             return None
@@ -71,8 +72,10 @@ class StudentRepository:
                     )
 
         try:
-            for key, value in student.dict(exclude_unset=True).items():
+            update_data = student.dict(exclude_unset=True)
+            for key, value in update_data.items():
                 setattr(db_student, key, value)
+            
             self.db.commit()
             self.db.refresh(db_student)
             return db_student
@@ -83,10 +86,16 @@ class StudentRepository:
                 detail="Error updating student. Please check your input."
             )
 
-    def delete(self, student_id: int):
+    def delete(self, student_id: UUID):
         db_student = self.get_by_id(student_id)
         if not db_student:
             return None
         self.db.delete(db_student)
         self.db.commit()
         return db_student
+
+    def get_by_class(self, class_id: UUID):
+        return self.db.query(Student).filter(Student.class_id == class_id).all()
+
+    def get_by_section(self, section_id: UUID):
+        return self.db.query(Student).filter(Student.section_id == section_id).all()

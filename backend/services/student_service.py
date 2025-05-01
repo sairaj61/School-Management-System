@@ -3,6 +3,8 @@ from repositories.student_repository import StudentRepository
 from repositories.class_repository import ClassRepository
 from repositories.section_repository import SectionRepository
 from schemas import StudentCreate, StudentUpdate, StudentResponse
+from uuid import UUID
+from decimal import Decimal
 
 class StudentService:
     def __init__(self, db):
@@ -13,42 +15,57 @@ class StudentService:
     def get_all_students(self):
         return self.student_repo.get_all()
 
-    def get_student_by_id(self, student_id: int):
+    def get_student(self, student_id: UUID):
         student = self.student_repo.get_by_id(student_id)
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
         return student
 
     def create_student(self, student: StudentCreate):
-        # Validate class_id
-        if not self.class_repo.get_by_id(student.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
-        # Validate section_id belongs to the selected class
-        section = self.section_repo.get_by_id(student.section_id)
-        if not section:
-            raise HTTPException(status_code=400, detail="Invalid section_id: Section does not exist")
-        if section.class_id != student.class_id:
-            raise HTTPException(status_code=400, detail="Section does not belong to the selected class")
+        # Validate fees are non-negative
+        if any(fee < Decimal('0.00') for fee in [
+            student.tuition_fees,
+            student.auto_fees,
+            student.day_boarding_fees
+        ]):
+            raise HTTPException(
+                status_code=400,
+                detail="Fees cannot be negative"
+            )
+        
         return self.student_repo.create(student)
 
-    def update_student(self, student_id: int, student: StudentUpdate):
-        if student.class_id and not self.class_repo.get_by_id(student.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
-        if student.section_id:
-            section = self.section_repo.get_by_id(student.section_id)
-            if not section:
-                raise HTTPException(status_code=400, detail="Invalid section_id: Section does not exist")
-            # If class_id is also updated, ensure section belongs to it
-            class_id = student.class_id or self.student_repo.get_by_id(student_id).class_id
-            if section.class_id != class_id:
-                raise HTTPException(status_code=400, detail="Section does not belong to the selected class")
+    def update_student(self, student_id: UUID, student: StudentUpdate):
+        # Validate fees if provided
+        if student.tuition_fees is not None and student.tuition_fees < Decimal('0.00'):
+            raise HTTPException(
+                status_code=400,
+                detail="Tuition fees cannot be negative"
+            )
+        if student.auto_fees is not None and student.auto_fees < Decimal('0.00'):
+            raise HTTPException(
+                status_code=400,
+                detail="Auto fees cannot be negative"
+            )
+        if student.day_boarding_fees is not None and student.day_boarding_fees < Decimal('0.00'):
+            raise HTTPException(
+                status_code=400,
+                detail="Day boarding fees cannot be negative"
+            )
+
         updated_student = self.student_repo.update(student_id, student)
         if not updated_student:
             raise HTTPException(status_code=404, detail="Student not found")
         return updated_student
 
-    def delete_student(self, student_id: int):
+    def delete_student(self, student_id: UUID):
         deleted_student = self.student_repo.delete(student_id)
         if not deleted_student:
             raise HTTPException(status_code=404, detail="Student not found")
-        return {"message": "Student deleted"}
+        return deleted_student
+
+    def get_students_by_class(self, class_id: UUID):
+        return self.student_repo.get_by_class(class_id)
+
+    def get_students_by_section(self, section_id: UUID):
+        return self.student_repo.get_by_section(section_id)
