@@ -1,108 +1,172 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Typography, TextField, Button, Grid, Snackbar, Alert } from '@mui/material';
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  MenuItem,
+  Snackbar,
+  Alert
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import { handleApiError } from '../utils/errorHandler';
 
 const ClassManager = () => {
   const [classes, setClasses] = useState([]);
-  const [newClass, setNewClass] = useState({ name: '', academic_year: '' });
+  const [academicYears, setAcademicYears] = useState([]);
+  const [newClass, setNewClass] = useState({
+    name: '',
+    academic_year_id: ''
+  });
   const [editingClass, setEditingClass] = useState(null);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchClasses();
+    fetchAcademicYears();
   }, []);
 
   const fetchClasses = async () => {
     try {
+      setLoading(true);
       const response = await axios.get('http://localhost:8000/classes/');
       setClasses(response.data);
     } catch (error) {
-      setAlert({ open: true, message: 'Error fetching classes: ' + error.message, severity: 'error' });
+      handleApiError(error, setAlert);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAcademicYears = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/academic-years/');
+      setAcademicYears(response.data);
+    } catch (error) {
+      handleApiError(error, setAlert);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewClass(prev => ({ ...prev, [name]: value }));
+    console.log(`Input change - ${name}:`, value);
+    setNewClass(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleAddClass = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/classes/', newClass);
-      setAlert({ open: true, message: 'Class added successfully!', severity: 'success' });
-      fetchClasses();
-      setNewClass({ name: '', academic_year: '' });
-    } catch (error) {
-      setAlert({ open: true, message: 'Error adding class: ' + error.message, severity: 'error' });
-    }
-  };
+      if (!newClass.academic_year_id) {
+        setAlert({
+          open: true,
+          message: 'Please select an academic year',
+          severity: 'error'
+        });
+        return;
+      }
 
-  const handleEditClass = (cls) => {
-    setEditingClass(cls);
-    setNewClass(cls);
-  };
+      const classData = {
+        name: newClass.name.trim(),
+        academic_year_id: newClass.academic_year_id
+      };
 
-  const handleUpdateClass = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`http://localhost:8000/classes/${editingClass.id}`, newClass);
-      setAlert({ open: true, message: 'Class updated successfully!', severity: 'success' });
-      fetchClasses();
+      console.log('Submitting class data:', classData);
+
+      if (editingClass) {
+        console.log('Updating class with ID:', editingClass.id);
+        await axios.put(`http://localhost:8000/classes/${editingClass.id}`, classData);
+        setAlert({ open: true, message: 'Class updated successfully!', severity: 'success' });
+      } else {
+        await axios.post('http://localhost:8000/classes/', classData);
+        setAlert({ open: true, message: 'Class added successfully!', severity: 'success' });
+      }
+
+      setNewClass({ name: '', academic_year_id: '' });
       setEditingClass(null);
-      setNewClass({ name: '', academic_year: '' });
+      fetchClasses();
     } catch (error) {
-      setAlert({ open: true, message: 'Error updating class: ' + error.message, severity: 'error' });
+      console.error('Error data:', error.response?.data);
+      handleApiError(error, setAlert);
     }
   };
 
-  const handleDeleteClass = async (id) => {
+  const handleEdit = (classItem) => {
+    setEditingClass(classItem);
+    setNewClass({
+      name: classItem.name,
+      academic_year_id: classItem.academic_year_id
+    });
+  };
+
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this class?')) {
       try {
         await axios.delete(`http://localhost:8000/classes/${id}`);
         setAlert({ open: true, message: 'Class deleted successfully!', severity: 'success' });
         fetchClasses();
       } catch (error) {
-        setAlert({ open: true, message: 'Error deleting class: ' + error.message, severity: 'error' });
+        handleApiError(error, setAlert);
       }
     }
   };
 
-  const handleCloseAlert = () => {
-    setAlert({ ...alert, open: false });
-  };
-
   const columns = [
-    { field: 'id', headerName: 'ID', width: 90 },
     { field: 'name', headerName: 'Name', width: 150 },
-    { field: 'academic_year', headerName: 'Academic Year', width: 150 },
+    {
+      field: 'academic_year',
+      headerName: 'Academic Year',
+      width: 150,
+      valueGetter: (params) => {
+        const year = academicYears.find(y => y.id === params.row.academic_year_id);
+        return year ? year.year : '';
+      }
+    },
     {
       field: 'actions',
       headerName: 'Actions',
       width: 200,
-      renderCell: ({ row }) => (
-        <>
-          <Button variant="contained" color="primary" size="small" onClick={() => handleEditClass(row)} sx={{ mr: 1 }}>
+      renderCell: (params) => (
+        <div>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => handleEdit(params.row)}
+            sx={{ mr: 1 }}
+          >
             Edit
           </Button>
-          <Button variant="contained" color="error" size="small" onClick={() => handleDeleteClass(row.id)}>
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => handleDelete(params.row.id)}
+          >
             Delete
           </Button>
-        </>
+        </div>
       ),
     },
   ];
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>{editingClass ? 'Edit Class' : 'Add Class'}</Typography>
-      <form onSubmit={editingClass ? handleUpdateClass : handleAddClass}>
+      <Typography variant="h4" gutterBottom>
+        {editingClass ? 'Edit Class' : 'Add Class'}
+      </Typography>
+
+      <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Name"
+              label="Class Name"
               name="name"
               value={newClass.name}
               onChange={handleInputChange}
@@ -111,24 +175,40 @@ const ClassManager = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
+              select
               fullWidth
               label="Academic Year"
-              name="academic_year"
-              value={newClass.academic_year}
+              name="academic_year_id"
+              value={newClass.academic_year_id || ''}
               onChange={handleInputChange}
               required
-            />
+            >
+              <MenuItem value="">
+                <em>Select an academic year</em>
+              </MenuItem>
+              {academicYears.map((year) => (
+                <MenuItem key={year.id} value={year.id}>
+                  {year.year}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12}>
-            <Button type="submit" variant="contained" color="primary" sx={{ mr: 1 }}>
-              {editingClass ? 'Update Class' : 'Add Class'}
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ mr: 1 }}
+            >
+              {editingClass ? 'Update' : 'Add'} Class
             </Button>
             {editingClass && (
               <Button
-                variant="outlined"
+                variant="contained"
+                color="secondary"
                 onClick={() => {
                   setEditingClass(null);
-                  setNewClass({ name: '', academic_year: '' });
+                  setNewClass({ name: '', academic_year_id: '' });
                 }}
               >
                 Cancel
@@ -137,17 +217,30 @@ const ClassManager = () => {
           </Grid>
         </Grid>
       </form>
-      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>Classes</Typography>
+
+      <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>Classes List</Typography>
       <div style={{ height: 400, width: '100%' }}>
         <DataGrid
           rows={classes}
           columns={columns}
-          pageSizeOptions={[5]}
-          disableRowSelectionOnClick
+          pageSize={5}
+          rowsPerPageOptions={[5]}
+          disableSelectionOnClick
+          loading={loading}
+          getRowId={(row) => row.id}
         />
       </div>
-      <Snackbar open={alert.open} autoHideDuration={3000} onClose={handleCloseAlert}>
-        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
+
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={() => setAlert({ ...alert, open: false })}
+      >
+        <Alert
+          onClose={() => setAlert({ ...alert, open: false })}
+          severity={alert.severity}
+          sx={{ width: '100%', whiteSpace: 'pre-line' }}
+        >
           {alert.message}
         </Alert>
       </Snackbar>

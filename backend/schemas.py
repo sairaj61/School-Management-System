@@ -86,7 +86,7 @@ class ClassCreate(ClassBase):
     academic_year_id: UUID
 
 class ClassUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=50)
     academic_year_id: Optional[UUID] = None
 
 class ClassResponse(ClassBase):
