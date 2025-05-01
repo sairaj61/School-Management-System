@@ -10,6 +10,11 @@ def get_sections(db=Depends(get_db)):
     service = SectionService(db)
     return service.get_all_sections()
 
+@router.get("/by-class/{class_id}", response_model=list[SectionResponse])
+def get_sections_by_class_id(class_id: int, db=Depends(get_db)):
+    service = SectionService(db)
+    return service.get_sections_by_class_id(class_id)
+
 @router.post("/", response_model=SectionResponse)
 def create_section(section: SectionCreate, db=Depends(get_db)):
     service = SectionService(db)

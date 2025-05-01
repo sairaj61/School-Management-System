@@ -19,18 +19,12 @@ class FeePaymentService:
 
     def create_payment(self, payment: FeePaymentCreate):
         if not self.student_repo.get_by_id(payment.student_id):
-            raise HTTPException(status_code=400, detail="Invalid student_id")
-        if payment.amount < 0 or payment.balance < 0:
-            raise HTTPException(status_code=400, detail="Amount and balance must be non-negative")
+            raise HTTPException(status_code=400, detail="Invalid student_id: Student does not exist")
         return self.payment_repo.create(payment)
 
     def update_payment(self, payment_id: int, payment: FeePaymentUpdate):
         if payment.student_id and not self.student_repo.get_by_id(payment.student_id):
-            raise HTTPException(status_code=400, detail="Invalid student_id")
-        if payment.amount is not None and payment.amount < 0:
-            raise HTTPException(status_code=400, detail="Amount must be non-negative")
-        if payment.balance is not None and payment.balance < 0:
-            raise HTTPException(status_code=400, detail="Balance must be non-negative")
+            raise HTTPException(status_code=400, detail="Invalid student_id: Student does not exist")
         updated_payment = self.payment_repo.update(payment_id, payment)
         if not updated_payment:
             raise HTTPException(status_code=404, detail="Fee payment not found")

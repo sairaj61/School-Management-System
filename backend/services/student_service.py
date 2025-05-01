@@ -22,17 +22,26 @@ class StudentService:
     def create_student(self, student: StudentCreate):
         # Validate class_id
         if not self.class_repo.get_by_id(student.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id")
-        # Validate section_id
-        if not self.section_repo.get_by_id(student.section_id):
-            raise HTTPException(status_code=400, detail="Invalid section_id")
+            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
+        # Validate section_id belongs to the selected class
+        section = self.section_repo.get_by_id(student.section_id)
+        if not section:
+            raise HTTPException(status_code=400, detail="Invalid section_id: Section does not exist")
+        if section.class_id != student.class_id:
+            raise HTTPException(status_code=400, detail="Section does not belong to the selected class")
         return self.student_repo.create(student)
 
     def update_student(self, student_id: int, student: StudentUpdate):
         if student.class_id and not self.class_repo.get_by_id(student.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id")
-        if student.section_id and not self.section_repo.get_by_id(student.section_id):
-            raise HTTPException(status_code=400, detail="Invalid section_id")
+            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
+        if student.section_id:
+            section = self.section_repo.get_by_id(student.section_id)
+            if not section:
+                raise HTTPException(status_code=400, detail="Invalid section_id: Section does not exist")
+            # If class_id is also updated, ensure section belongs to it
+            class_id = student.class_id or self.student_repo.get_by_id(student_id).class_id
+            if section.class_id != class_id:
+                raise HTTPException(status_code=400, detail="Section does not belong to the selected class")
         updated_student = self.student_repo.update(student_id, student)
         if not updated_student:
             raise HTTPException(status_code=404, detail="Student not found")
