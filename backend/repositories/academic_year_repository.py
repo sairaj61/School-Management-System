@@ -23,11 +23,11 @@ class AcademicYearRepository:
         if existing_year:
             raise HTTPException(
                 status_code=400,
-                detail=f"Academic year {academic_year.year} already exists"
+                detail=f"Academic year '{academic_year.year}' already exists"
             )
 
         try:
-            db_academic_year = AcademicYear(**academic_year.dict(), is_active=True)  # Set active by default
+            db_academic_year = AcademicYear(**academic_year.dict(), is_active=True)
             # Deactivate other years since this is a new year
             self.deactivate_all_years()
             
@@ -39,7 +39,7 @@ class AcademicYearRepository:
             self.db.rollback()
             raise HTTPException(
                 status_code=400,
-                detail=f"Academic year {academic_year.year} already exists"
+                detail=f"Error creating academic year. Please check your input."
             )
 
     def update(self, year_id: int, academic_year: AcademicYearUpdate):
@@ -47,18 +47,19 @@ class AcademicYearRepository:
         if not db_academic_year:
             return None
 
-        # If updating year, check if new year already exists
+        # If year is being updated, check for duplicates
         if academic_year.year and academic_year.year != db_academic_year.year:
-            existing_year = self.get_by_year(academic_year.year)
+            # Check if the new year already exists (excluding current record)
+            existing_year = self.db.query(AcademicYear).filter(
+                AcademicYear.year == academic_year.year,
+                AcademicYear.id != year_id
+            ).first()
+            
             if existing_year:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Academic year {academic_year.year} already exists"
+                    detail=f"Academic year '{academic_year.year}' already exists"
                 )
-
-        # If setting this year as active, deactivate all other years
-        if academic_year.is_active:
-            self.deactivate_all_years()
 
         try:
             for key, value in academic_year.dict(exclude_unset=True).items():
@@ -70,7 +71,7 @@ class AcademicYearRepository:
             self.db.rollback()
             raise HTTPException(
                 status_code=400,
-                detail=f"Academic year {academic_year.year} already exists"
+                detail="Error updating academic year. Please check your input."
             )
 
     def delete(self, year_id: int):
