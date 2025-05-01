@@ -38,6 +38,7 @@ const StudentManager = () => {
     fetchStudents();
     fetchClasses();
     fetchAcademicYears();
+    fetchAllSections();
   }, []);
 
   const fetchStudents = async () => {
@@ -61,12 +62,20 @@ const StudentManager = () => {
     }
   };
 
+  const fetchAllSections = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/sections/');
+      setSections(response.data);
+    } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
+
   const fetchSections = async (classId) => {
     try {
-      setSections([]);
-      if (!classId) return;
-      const response = await axios.get(`http://localhost:8000/sections/?class_id=${classId}`);
-      setSections(response.data);
+      const response = await axios.get('http://localhost:8000/sections/');
+      const filteredSections = response.data.filter(section => section.class_id === classId);
+      setSections(filteredSections);
     } catch (error) {
       handleApiError(error, setAlert);
     }
