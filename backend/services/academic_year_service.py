@@ -7,7 +7,10 @@ class AcademicYearService:
         self.academic_year_repo = AcademicYearRepository(db)
 
     def get_all_academic_years(self):
-        return self.academic_year_repo.get_all()
+        # Get all academic years and filter for active ones
+        all_years = self.academic_year_repo.get_all()
+        active_years = [year for year in all_years if year.is_active]
+        return active_years
 
     def get_active_academic_year(self):
         years = self.academic_year_repo.get_all()
