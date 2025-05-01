@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert } from '@mui/material';
+import {
+  Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { formatApiError, handleApiError } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 
 const StudentManager = () => {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
-  const [newStudent, setNewStudent] = useState({
+  const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [formData, setFormData] = useState({
     name: '',
     roll_number: '',
     father_name: '',
@@ -25,9 +33,6 @@ const StudentManager = () => {
     section_id: '',
     academic_year_id: ''
   });
-  const [editingStudent, setEditingStudent] = useState(null);
-  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStudents();
@@ -59,9 +64,7 @@ const StudentManager = () => {
   const fetchSections = async (classId) => {
     try {
       setSections([]);
-      
       if (!classId) return;
-
       const response = await axios.get(`http://localhost:8000/sections/?class_id=${classId}`);
       setSections(response.data);
     } catch (error) {
@@ -78,72 +81,31 @@ const StudentManager = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === 'class_id') {
-      setNewStudent(prev => ({
-        ...prev,
-        [name]: value,
-        section_id: ''
-      }));
-      fetchSections(value);
+  const handleModalOpen = (student = null) => {
+    if (student) {
+      setSelectedStudent(student);
+      setFormData({
+        name: student.name,
+        roll_number: student.roll_number,
+        father_name: student.father_name,
+        mother_name: student.mother_name,
+        date_of_birth: student.date_of_birth?.split('T')[0] || '',
+        contact: student.contact,
+        address: student.address,
+        enrollment_date: student.enrollment_date?.split('T')[0] || '',
+        tuition_fees: student.tuition_fees.toString(),
+        auto_fees: student.auto_fees.toString(),
+        day_boarding_fees: student.day_boarding_fees.toString(),
+        class_id: student.class_id,
+        section_id: student.section_id,
+        academic_year_id: student.academic_year_id
+      });
+      if (student.class_id) {
+        fetchSections(student.class_id);
+      }
     } else {
-      setNewStudent(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const handleFeeInput = (e) => {
-    const { name, value } = e.target;
-    if (value === '' || /^\d+$/.test(value)) {
-      setNewStudent(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (!newStudent.academic_year_id) {
-        setAlert({ 
-          open: true, 
-          message: 'Please select an academic year', 
-          severity: 'error' 
-        });
-        return;
-      }
-
-      const studentData = {
-        name: newStudent.name.trim(),
-        roll_number: newStudent.roll_number.trim(),
-        father_name: newStudent.father_name.trim(),
-        mother_name: newStudent.mother_name.trim(),
-        date_of_birth: newStudent.date_of_birth,
-        contact: newStudent.contact.trim(),
-        address: newStudent.address.trim(),
-        enrollment_date: newStudent.enrollment_date,
-        tuition_fees: Number(newStudent.tuition_fees || 0),
-        auto_fees: Number(newStudent.auto_fees || 0),
-        day_boarding_fees: Number(newStudent.day_boarding_fees || 0),
-        class_id: newStudent.class_id,
-        section_id: newStudent.section_id,
-        academic_year_id: newStudent.academic_year_id
-      };
-
-      if (editingStudent) {
-        await axios.put(`http://localhost:8000/students/${editingStudent.id}`, studentData);
-        setAlert({ open: true, message: 'Student updated successfully!', severity: 'success' });
-      } else {
-        await axios.post('http://localhost:8000/students/', studentData);
-        setAlert({ open: true, message: 'Student added successfully!', severity: 'success' });
-      }
-      
-      setNewStudent({
+      setSelectedStudent(null);
+      setFormData({
         name: '',
         roll_number: '',
         father_name: '',
@@ -159,28 +121,81 @@ const StudentManager = () => {
         section_id: '',
         academic_year_id: ''
       });
-      setEditingStudent(null);
-      fetchStudents();
-    } catch (error) {
-      handleApiError(error, setAlert);
+    }
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedStudent(null);
+    setFormData({
+      name: '',
+      roll_number: '',
+      father_name: '',
+      mother_name: '',
+      date_of_birth: '',
+      contact: '',
+      address: '',
+      enrollment_date: '',
+      tuition_fees: '',
+      auto_fees: '',
+      day_boarding_fees: '',
+      class_id: '',
+      section_id: '',
+      academic_year_id: ''
+    });
+    setSections([]);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    if (name === 'class_id') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        section_id: ''
+      }));
+      fetchSections(value);
     }
   };
 
-  const handleEdit = (student) => {
-    setEditingStudent(student);
-    setNewStudent({
-      ...student,
-      date_of_birth: student.date_of_birth?.split('T')[0] || '',
-      enrollment_date: student.enrollment_date?.split('T')[0] || '',
-      tuition_fees: student.tuition_fees.toString(),
-      auto_fees: student.auto_fees.toString(),
-      day_boarding_fees: student.day_boarding_fees.toString(),
-      class_id: student.class_id.toString(),
-      section_id: student.section_id.toString(),
-      academic_year_id: student.academic_year_id?.toString() || ''
-    });
-    if (student.class_id) {
-      fetchSections(student.class_id);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const studentData = {
+        name: formData.name.trim(),
+        roll_number: formData.roll_number.trim(),
+        father_name: formData.father_name.trim(),
+        mother_name: formData.mother_name.trim(),
+        date_of_birth: formData.date_of_birth,
+        contact: formData.contact.trim(),
+        address: formData.address.trim(),
+        enrollment_date: formData.enrollment_date,
+        tuition_fees: parseInt(formData.tuition_fees) || 0,
+        auto_fees: parseInt(formData.auto_fees) || 0,
+        day_boarding_fees: parseInt(formData.day_boarding_fees) || 0,
+        class_id: formData.class_id,
+        section_id: formData.section_id,
+        academic_year_id: formData.academic_year_id
+      };
+
+      if (selectedStudent) {
+        await axios.put(`http://localhost:8000/students/${selectedStudent.id}`, studentData);
+        setAlert({ open: true, message: 'Student updated successfully!', severity: 'success' });
+      } else {
+        await axios.post('http://localhost:8000/students/', studentData);
+        setAlert({ open: true, message: 'Student added successfully!', severity: 'success' });
+      }
+
+      handleModalClose();
+      fetchStudents();
+    } catch (error) {
+      handleApiError(error, setAlert);
     }
   };
 
@@ -196,37 +211,38 @@ const StudentManager = () => {
     }
   };
 
+  const filteredStudents = students.filter(student => {
+    const searchString = (
+      student.name +
+      student.roll_number +
+      student.father_name +
+      (classes.find(c => c.id === student.class_id)?.name || '')
+    ).toLowerCase();
+    return searchString.includes(searchTerm.toLowerCase());
+  });
+
   const columns = [
     { field: 'name', headerName: 'Name', width: 150 },
     { field: 'roll_number', headerName: 'Roll Number', width: 120 },
     { field: 'father_name', headerName: 'Father Name', width: 150 },
     { field: 'contact', headerName: 'Contact', width: 120 },
-    { 
-      field: 'class_name', 
-      headerName: 'Class', 
+    {
+      field: 'class_name',
+      headerName: 'Class',
       width: 100,
       valueGetter: (params) => {
         const cls = classes.find(c => c.id === params.row.class_id);
         return cls ? cls.name : '';
       }
     },
-    { 
-      field: 'section_name', 
-      headerName: 'Section', 
+    {
+      field: 'section_name',
+      headerName: 'Section',
       width: 100,
       valueGetter: (params) => {
         const section = sections.find(s => s.id === params.row.section_id);
         return section ? section.name : '';
       }
-    },
-    { 
-      field: 'tuition_fees', 
-      headerName: 'Tuition Fees', 
-      width: 120,
-      valueFormatter: ({ value }) => `₹${parseFloat(value).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      })}`
     },
     {
       field: 'actions',
@@ -238,7 +254,7 @@ const StudentManager = () => {
             variant="contained"
             color="primary"
             size="small"
-            onClick={() => handleEdit(params.row)}
+            onClick={() => handleModalOpen(params.row)}
             sx={{ mr: 1 }}
           >
             Edit
@@ -258,240 +274,31 @@ const StudentManager = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {editingStudent ? 'Edit Student' : 'Add Student'}
-      </Typography>
-
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Name"
-              name="name"
-              value={newStudent.name}
-              onChange={handleInputChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Roll Number"
-              name="roll_number"
-              value={newStudent.roll_number}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Father Name"
-              name="father_name"
-              value={newStudent.father_name}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Mother Name"
-              name="mother_name"
-              value={newStudent.mother_name}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Date of Birth"
-              name="date_of_birth"
-              type="date"
-              value={newStudent.date_of_birth}
-              onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Contact"
-              name="contact"
-              value={newStudent.contact}
-              onChange={handleInputChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Address"
-              name="address"
-              value={newStudent.address}
-              onChange={handleInputChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Enrollment Date"
-              name="enrollment_date"
-              type="date"
-              value={newStudent.enrollment_date}
-              onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Tuition Fees"
-              name="tuition_fees"
-              value={newStudent.tuition_fees}
-              onChange={handleFeeInput}
-              type="text"
-              inputProps={{
-                inputMode: 'numeric',
-                pattern: '[0-9]*'
-              }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Auto Fees"
-              name="auto_fees"
-              value={newStudent.auto_fees}
-              onChange={handleFeeInput}
-              type="text"
-              inputProps={{
-                inputMode: 'numeric',
-                pattern: '[0-9]*'
-              }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Day Boarding Fees"
-              name="day_boarding_fees"
-              value={newStudent.day_boarding_fees}
-              onChange={handleFeeInput}
-              type="text"
-              inputProps={{
-                inputMode: 'numeric',
-                pattern: '[0-9]*'
-              }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Class"
-              name="class_id"
-              value={newStudent.class_id}
-              onChange={handleInputChange}
-              required
-            >
-              {classes.map((cls) => (
-                <MenuItem key={cls.id} value={cls.id}>
-                  {cls.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Section"
-              name="section_id"
-              value={newStudent.section_id}
-              onChange={handleInputChange}
-              required
-              disabled={!newStudent.class_id || sections.length === 0}
-            >
-              {sections.length === 0 ? (
-                <MenuItem disabled value="">
-                  {newStudent.class_id ? 'Loading sections...' : 'Select a class first'}
-                </MenuItem>
-              ) : (
-                sections.map((section) => (
-                  <MenuItem key={section.id} value={section.id}>
-                    {section.name}
-                  </MenuItem>
-                ))
-              )}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Academic Year"
-              name="academic_year_id"
-              value={newStudent.academic_year_id}
-              onChange={handleInputChange}
-              required
-            >
-              {academicYears.map((year) => (
-                <MenuItem key={year.id} value={year.id}>
-                  {year.year}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ mr: 1 }}
-            >
-              {editingStudent ? 'Update' : 'Add'} Student
-            </Button>
-            {editingStudent && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  setEditingStudent(null);
-                  setNewStudent({
-                    name: '',
-                    roll_number: '',
-                    father_name: '',
-                    mother_name: '',
-                    date_of_birth: '',
-                    contact: '',
-                    address: '',
-                    enrollment_date: '',
-                    tuition_fees: '',
-                    auto_fees: '',
-                    day_boarding_fees: '',
-                    class_id: '',
-                    section_id: '',
-                    academic_year_id: ''
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-          </Grid>
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs>
+          <Typography variant="h4">Students</Typography>
         </Grid>
-      </form>
+        <Grid item>
+          <TextField
+            size="small"
+            placeholder="Search students..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() => handleModalOpen()}
+          >
+            Add Student
+          </Button>
+        </Grid>
+      </Grid>
 
-      <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>Students List</Typography>
       <div style={{ height: 400, width: '100%' }}>
         <DataGrid
-          rows={students}
+          rows={filteredStudents}
           columns={columns}
           pageSize={5}
           rowsPerPageOptions={[5]}
@@ -500,6 +307,210 @@ const StudentManager = () => {
           getRowId={(row) => row.id}
         />
       </div>
+
+      <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {selectedStudent ? 'Edit Student' : 'Add Student'}
+          <Button
+            onClick={handleModalClose}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Roll Number"
+                  name="roll_number"
+                  value={formData.roll_number}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Father's Name"
+                  name="father_name"
+                  value={formData.father_name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Mother's Name"
+                  name="mother_name"
+                  value={formData.mother_name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Date of Birth"
+                  name="date_of_birth"
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={handleInputChange}
+                  required
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Contact"
+                  name="contact"
+                  value={formData.contact}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={2}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Enrollment Date"
+                  name="enrollment_date"
+                  type="date"
+                  value={formData.enrollment_date}
+                  onChange={handleInputChange}
+                  required
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Academic Year"
+                  name="academic_year_id"
+                  value={formData.academic_year_id}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {academicYears.map((year) => (
+                    <MenuItem key={year.id} value={year.id}>
+                      {year.year}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Class"
+                  name="class_id"
+                  value={formData.class_id}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {classes.map((cls) => (
+                    <MenuItem key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Section"
+                  name="section_id"
+                  value={formData.section_id}
+                  onChange={handleInputChange}
+                  required
+                  disabled={!formData.class_id || sections.length === 0}
+                >
+                  {sections.length === 0 ? (
+                    <MenuItem disabled value="">
+                      {formData.class_id ? 'Loading sections...' : 'Select a class first'}
+                    </MenuItem>
+                  ) : (
+                    sections.map((section) => (
+                      <MenuItem key={section.id} value={section.id}>
+                        {section.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Tuition Fees"
+                  name="tuition_fees"
+                  type="number"
+                  value={formData.tuition_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Auto Fees"
+                  name="auto_fees"
+                  type="number"
+                  value={formData.auto_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Day Boarding Fees"
+                  name="day_boarding_fees"
+                  type="number"
+                  value={formData.day_boarding_fees}
+                  onChange={handleInputChange}
+                  required
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleModalClose}>Cancel</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {selectedStudent ? 'Update' : 'Add'} Student
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       <Snackbar
         open={alert.open}
