@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DECIMAL, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DECIMAL, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
+from datetime import datetime
 
 class Month(str, enum.Enum):
     JAN = "JAN"
@@ -25,7 +26,6 @@ class AcademicYear(Base):
     
     # Relationships
     students = relationship("Student", back_populates="academic_year")
-    fee_payments = relationship("FeePayment", back_populates="academic_year")
     classes = relationship("Class", back_populates="academic_year")
 
 class Student(Base):
@@ -75,11 +75,12 @@ class FeePayment(Base):
     __tablename__ = "fee_payments"
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id"))
-    academic_year_id = Column(Integer, ForeignKey("academic_years.id"))
     month = Column(Enum(Month))
-    amount = Column(DECIMAL(10, 2))
-    balance = Column(DECIMAL(10, 2))
+    tuition_fees = Column(DECIMAL(10, 2))  # Amount being paid for tuition
+    auto_fees = Column(DECIMAL(10, 2))     # Amount being paid for auto
+    day_boarding_fees = Column(DECIMAL(10, 2))  # Amount being paid for day boarding
+    total_amount = Column(DECIMAL(10, 2))  # Total of all fees being paid
+    transaction_date = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     student = relationship("Student", back_populates="fee_payments")
-    academic_year = relationship("AcademicYear", back_populates="fee_payments")

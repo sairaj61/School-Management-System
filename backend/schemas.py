@@ -114,24 +114,25 @@ class SectionResponse(SectionBase):
 
 class FeePaymentBase(BaseModel):
     month: Month
-    amount: Decimal = Field(..., ge=0)
-    balance: Decimal = Field(..., ge=0)
+    tuition_fees: Decimal = Field(..., ge=0)
+    auto_fees: Decimal = Field(..., ge=0)
+    day_boarding_fees: Decimal = Field(..., ge=0)
 
 class FeePaymentCreate(FeePaymentBase):
     student_id: int = Field(..., gt=0)
-    academic_year_id: int = Field(..., gt=0)
 
 class FeePaymentUpdate(BaseModel):
     month: Optional[Month]
-    amount: Optional[Decimal] = Field(None, ge=0)
-    balance: Optional[Decimal] = Field(None, ge=0)
+    tuition_fees: Optional[Decimal] = Field(None, ge=0)
+    auto_fees: Optional[Decimal] = Field(None, ge=0)
+    day_boarding_fees: Optional[Decimal] = Field(None, ge=0)
     student_id: Optional[int] = Field(None, gt=0)
-    academic_year_id: Optional[int] = Field(None, gt=0)
 
 class FeePaymentResponse(FeePaymentBase):
     id: int
     student_id: int
-    academic_year_id: int
+    total_amount: Decimal
+    transaction_date: datetime
 
     class Config:
         orm_mode = True

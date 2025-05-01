@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
-from models import FeePayment
+from models import FeePayment, Student
 from schemas import FeePaymentCreate, FeePaymentUpdate
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 class FeePaymentRepository:
     def __init__(self, db: Session):
@@ -12,22 +15,60 @@ class FeePaymentRepository:
     def get_by_id(self, payment_id: int):
         return self.db.query(FeePayment).filter(FeePayment.id == payment_id).first()
 
-    def create(self, payment: FeePaymentCreate):
-        db_payment = FeePayment(**payment.dict())
-        self.db.add(db_payment)
-        self.db.commit()
-        self.db.refresh(db_payment)
-        return db_payment
+    def create(self, fee_payment: FeePaymentCreate):
+        try:
+            # Calculate total amount
+            total_amount = (
+                fee_payment.tuition_fees +
+                fee_payment.auto_fees +
+                fee_payment.day_boarding_fees
+            )
+            
+            db_fee_payment = FeePayment(
+                **fee_payment.dict(),
+                total_amount=total_amount,
+                transaction_date=datetime.utcnow()
+            )
+            self.db.add(db_fee_payment)
+            self.db.commit()
+            self.db.refresh(db_fee_payment)
+            return db_fee_payment
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Error creating fee payment. Please check your input."
+            )
 
-    def update(self, payment_id: int, payment: FeePaymentUpdate):
-        db_payment = self.get_by_id(payment_id)
-        if not db_payment:
+    def update(self, payment_id: int, fee_payment: FeePaymentUpdate):
+        db_fee_payment = self.get_by_id(payment_id)
+        if not db_fee_payment:
             return None
-        for key, value in payment.dict(exclude_unset=True).items():
-            setattr(db_payment, key, value)
-        self.db.commit()
-        self.db.refresh(db_payment)
-        return db_payment
+
+        try:
+            update_data = fee_payment.dict(exclude_unset=True)
+            
+            # If any fee is updated, recalculate total
+            if any(key in update_data for key in ['tuition_fees', 'auto_fees', 'day_boarding_fees']):
+                total_amount = (
+                    (update_data.get('tuition_fees') or db_fee_payment.tuition_fees) +
+                    (update_data.get('auto_fees') or db_fee_payment.auto_fees) +
+                    (update_data.get('day_boarding_fees') or db_fee_payment.day_boarding_fees)
+                )
+                update_data['total_amount'] = total_amount
+
+            for key, value in update_data.items():
+                setattr(db_fee_payment, key, value)
+            
+            self.db.commit()
+            self.db.refresh(db_fee_payment)
+            return db_fee_payment
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Error updating fee payment. Please check your input."
+            )
 
     def delete(self, payment_id: int):
         db_payment = self.get_by_id(payment_id)

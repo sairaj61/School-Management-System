@@ -11,14 +11,15 @@ class DashboardService:
     def get_dashboard(self) -> DashboardResponse:
         total_students = len(self.student_repo.get_all())
         fee_payments = self.payment_repo.get_all()
-        total_payments = sum(payment.amount for payment in fee_payments)
+        
+        total_payments = sum(payment.total_amount for payment in fee_payments)
         total_dues = sum(payment.balance for payment in fee_payments)
         
         students_with_payments = [
             StudentPaymentInfo(
                 id=payment.student.id,
                 name=payment.student.name,
-                total_paid=payment.amount,
+                total_paid=payment.total_amount,
                 total_balance=payment.balance,
                 payment_status="Paid" if payment.balance <= 0 else "Pending"
             )
