@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from services.fee_payment_service import FeePaymentService
 from schemas import FeePaymentCreate, FeePaymentUpdate, FeePaymentResponse
 from database import get_db
-
+from uuid import UUID
 router = APIRouter()
 
 @router.get("/", response_model=list[FeePaymentResponse])
@@ -16,11 +16,11 @@ def create_fee_payment(payment: FeePaymentCreate, db=Depends(get_db)):
     return service.create_payment(payment)
 
 @router.put("/{payment_id}", response_model=FeePaymentResponse)
-def update_fee_payment(payment_id: int, payment: FeePaymentUpdate, db=Depends(get_db)):
+def update_fee_payment(payment_id: UUID, payment: FeePaymentUpdate, db=Depends(get_db)):
     service = FeePaymentService(db)
     return service.update_payment(payment_id, payment)
 
 @router.delete("/{payment_id}")
-def delete_fee_payment(payment_id: int, db=Depends(get_db)):
+def delete_fee_payment(payment_id: UUID, db=Depends(get_db)):
     service = FeePaymentService(db)
     return service.delete_payment(payment_id)

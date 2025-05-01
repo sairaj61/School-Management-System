@@ -21,6 +21,6 @@ def update_class(class_id: UUID, cls: ClassUpdate, db=Depends(get_db)):
     return service.update_class(class_id, cls)
 
 @router.delete("/{class_id}")
-def delete_class(class_id: int, db=Depends(get_db)):
+def delete_class(class_id: UUID, db=Depends(get_db)):
     service = ClassService(db)
     return service.delete_class(class_id)
