@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import { formatApiError, handleApiError } from '../utils/errorHandler';
 
 const StudentManager = () => {
   const [students, setStudents] = useState([]);
@@ -40,7 +41,7 @@ const StudentManager = () => {
       const response = await axios.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
-      setAlert({ open: true, message: 'Error fetching students: ' + error.message, severity: 'error' });
+      handleApiError(error, setAlert);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ const StudentManager = () => {
       const response = await axios.get('http://localhost:8000/classes/');
       setClasses(response.data);
     } catch (error) {
-      setAlert({ open: true, message: 'Error fetching classes: ' + error.message, severity: 'error' });
+      handleApiError(error, setAlert);
     }
   };
 
@@ -64,7 +65,7 @@ const StudentManager = () => {
       const response = await axios.get(`http://localhost:8000/sections/?class_id=${classId}`);
       setSections(response.data);
     } catch (error) {
-      setAlert({ open: true, message: 'Error fetching sections: ' + error.message, severity: 'error' });
+      handleApiError(error, setAlert);
     }
   };
 
@@ -73,7 +74,7 @@ const StudentManager = () => {
       const response = await axios.get('http://localhost:8000/academic-years/');
       setAcademicYears(response.data);
     } catch (error) {
-      setAlert({ open: true, message: 'Error fetching academic years: ' + error.message, severity: 'error' });
+      handleApiError(error, setAlert);
     }
   };
 
@@ -138,8 +139,7 @@ const StudentManager = () => {
         await axios.put(`http://localhost:8000/students/${editingStudent.id}`, studentData);
         setAlert({ open: true, message: 'Student updated successfully!', severity: 'success' });
       } else {
-        const response = await axios.post('http://localhost:8000/students/', studentData);
-        console.log('Created student:', response.data);
+        await axios.post('http://localhost:8000/students/', studentData);
         setAlert({ open: true, message: 'Student added successfully!', severity: 'success' });
       }
       
@@ -162,12 +162,7 @@ const StudentManager = () => {
       setEditingStudent(null);
       fetchStudents();
     } catch (error) {
-      console.error('Error details:', error.response?.data);
-      setAlert({ 
-        open: true, 
-        message: 'Error: ' + (error.response?.data?.detail || error.message), 
-        severity: 'error' 
-      });
+      handleApiError(error, setAlert);
     }
   };
 
@@ -196,7 +191,7 @@ const StudentManager = () => {
         setAlert({ open: true, message: 'Student deleted successfully!', severity: 'success' });
         fetchStudents();
       } catch (error) {
-        setAlert({ open: true, message: 'Error deleting student: ' + error.message, severity: 'error' });
+        handleApiError(error, setAlert);
       }
     }
   };
@@ -514,7 +509,7 @@ const StudentManager = () => {
         <Alert
           onClose={() => setAlert({ ...alert, open: false })}
           severity={alert.severity}
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', whiteSpace: 'pre-line' }}
         >
           {alert.message}
         </Alert>
