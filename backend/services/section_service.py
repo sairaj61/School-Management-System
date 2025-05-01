@@ -12,11 +12,11 @@ class SectionService:
         return self.section_repo.get_all()
 
     def get_sections_by_class_id(self, class_id: int):
-        if not self.class_repo.get_by_id(class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
-        return self.section_repo.db.query(self.section_repo.model).filter(
-            self.section_repo.model.class_id == class_id
-        ).all()
+        # First validate if class exists
+        class_exists = self.class_repo.get_by_id(class_id)
+        if not class_exists:
+            raise HTTPException(status_code=404, detail=f"Class with id {class_id} not found")
+        return self.section_repo.get_sections_by_class_id(class_id)
 
     def get_section_by_id(self, section_id: int):
         section = self.section_repo.get_by_id(section_id)
@@ -25,28 +25,25 @@ class SectionService:
         return section
 
     def create_section(self, section: SectionCreate):
-        if not self.class_repo.get_by_id(section.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
-        # Check for duplicate section name in the same class
-        existing = self.section_repo.db.query(self.section_repo.model).filter(
-            self.section_repo.model.name == section.name,
-            self.section_repo.model.class_id == section.class_id
-        ).first()
-        if existing:
-            raise HTTPException(status_code=400, detail="Section with this name already exists in the class")
+        # Validate if class exists
+        class_exists = self.class_repo.get_by_id(section.class_id)
+        if not class_exists:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid class_id: Class with id {section.class_id} does not exist"
+            )
         return self.section_repo.create(section)
 
     def update_section(self, section_id: int, section: SectionUpdate):
-        if section.class_id and not self.class_repo.get_by_id(section.class_id):
-            raise HTTPException(status_code=400, detail="Invalid class_id: Class does not exist")
-        if section.name and section.class_id:
-            existing = self.section_repo.db.query(self.section_repo.model).filter(
-                self.section_repo.model.name == section.name,
-                self.section_repo.model.class_id == section.class_id,
-                self.section_repo.model.id != section_id
-            ).first()
-            if existing:
-                raise HTTPException(status_code=400, detail="Section with this name already exists in the class")
+        # If class_id is being updated, validate if new class exists
+        if section.class_id:
+            class_exists = self.class_repo.get_by_id(section.class_id)
+            if not class_exists:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid class_id: Class with id {section.class_id} does not exist"
+                )
+        
         updated_section = self.section_repo.update(section_id, section)
         if not updated_section:
             raise HTTPException(status_code=404, detail="Section not found")
