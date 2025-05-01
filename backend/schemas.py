@@ -139,28 +139,9 @@ class ClassCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     academic_year_id: int = Field(..., gt=0)
 
-    @validator("academic_year_id")
-    def validate_academic_year(cls, value):
-        if not re.match(r"^\d{4}-\d{4}$", value):
-            raise ValueError("Academic year must be in YYYY-YYYY format")
-        start, end = map(int, value.split("-"))
-        if end != start + 1:
-            raise ValueError("Academic year must span one year (e.g., 2023-2024)")
-        return value
-
 class ClassUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=50)
     academic_year_id: Optional[int] = Field(None, gt=0)
-
-    @validator("academic_year_id")
-    def validate_academic_year(cls, value):
-        if value and not re.match(r"^\d{4}-\d{4}$", value):
-            raise ValueError("Academic year must be in YYYY-YYYY format")
-        if value:
-            start, end = map(int, value.split("-"))
-            if end != start + 1:
-                raise ValueError("Academic year must span one year (e.g., 2023-2024)")
-        return value
 
 class ClassResponse(BaseModel):
     id: int
