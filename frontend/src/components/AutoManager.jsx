@@ -150,13 +150,19 @@ const AutoManager = () => {
     }
   };
 
-  const handleAssignSubmit = async (e) => {
-    e.preventDefault();
+  const handleAssignSubmit = async () => {
     try {
-      await axios.post(`http://localhost:8000/auto-management/autos/${selectedAuto.id}/assign-students`, 
+      await axios.post(
+        `http://localhost:8000/auto-management/autos/${selectedAuto.id}/assign-students`, 
         selectedStudents
       );
-      setAlert({ open: true, message: 'Students assigned successfully!', severity: 'success' });
+      
+      setAlert({ 
+        open: true, 
+        message: 'Students assigned successfully!', 
+        severity: 'success' 
+      });
+      
       handleAssignModalClose();
       fetchAutos();
     } catch (error) {
@@ -486,25 +492,25 @@ const AutoManager = () => {
         </form>
       </Dialog>
 
-      {/* Assign Students Modal */}
-      <Dialog open={assignModalOpen} onClose={handleAssignModalClose}>
-        <DialogTitle>Assign Students to Auto</DialogTitle>
-        <Paper sx={{ mt: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Assign Students to {selectedAuto?.name}
-          </Typography>
-          
-          <TextField
-            fullWidth
-            label="Search Students"
-            variant="outlined"
-            value={searchTerm}
-            onChange={(e) => handleStudentSearch(e, e.target.value)}
-            sx={{ mb: 2 }}
-          />
-
-          <Box sx={{ maxHeight: '400px', overflow: 'auto' }}>
-            {filteredStudents.map((student) => (
+      {/* Student Assignment Dialog */}
+      <Dialog 
+        open={Boolean(selectedAuto)} 
+        onClose={handleAssignModalClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Assign Students to {selectedAuto?.name}
+          <IconButton
+            onClick={handleAssignModalClose}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {students.map((student) => (
               <Paper 
                 key={student.id} 
                 sx={{ 
@@ -539,27 +545,20 @@ const AutoManager = () => {
               </Paper>
             ))}
           </Box>
-
-          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-            <Button
-              variant="contained"
-              onClick={() => handleAssignSubmit(selectedAuto.id)}
-              disabled={selectedStudents.length === 0}
-            >
-              Assign Selected Students ({selectedStudents.length})
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setSelectedAuto(null);
-                setSelectedStudents([]);
-                setSearchTerm('');
-              }}
-            >
-              Cancel
-            </Button>
-          </Box>
-        </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAssignModalClose} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAssignSubmit}
+            disabled={selectedStudents.length === 0}
+          >
+            Assign {selectedStudents.length} Student(s)
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* View Students Modal */}
