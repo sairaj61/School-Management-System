@@ -180,13 +180,20 @@ const AutoManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this auto?')) {
+    if (window.confirm('Are you sure you want to delete this auto? This will remove all student assignments.')) {
       try {
+        setLoading(true);
         await axios.delete(`http://localhost:8000/auto-management/autos/${id}`);
-        setAlert({ open: true, message: 'Auto deleted successfully!', severity: 'success' });
-        fetchAutos();
+        setAlert({ 
+          open: true, 
+          message: 'Auto and its assignments deleted successfully!', 
+          severity: 'success' 
+        });
+        await fetchAutos(); // Refresh the list
       } catch (error) {
         handleApiError(error, setAlert);
+      } finally {
+        setLoading(false);
       }
     }
   };

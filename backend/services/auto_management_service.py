@@ -38,11 +38,14 @@ class AutoManagementService:
             raise HTTPException(status_code=404, detail="Auto not found")
         return updated_auto
 
-    def delete_auto(self, auto_id):
-        deleted_auto = self.auto_repo.delete(auto_id)
-        if not deleted_auto:
-            raise HTTPException(status_code=404, detail="Auto not found")
-        return {"message": "Auto deleted successfully"}
+    def delete_auto(self, auto_id: UUID):
+        """Delete an auto and all its student mappings"""
+        try:
+            return self.auto_repo.delete_auto(auto_id)
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     def assign_student(self, mapping: AutoStudentMappingCreate):
         if not self.auto_repo.get_by_id(mapping.auto_id):

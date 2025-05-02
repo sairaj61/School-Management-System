@@ -45,6 +45,29 @@ class AutoManagementRepository:
         self.db.commit()
         return db_auto
 
+    def delete_auto(self, auto_id: UUID):
+        """Delete an auto and its student mappings"""
+        try:
+            # First delete all student mappings for this auto
+            self.db.query(AutoStudentMapping).filter(
+                AutoStudentMapping.auto_id == auto_id
+            ).delete(synchronize_session=False)
+            
+            # Then delete the auto
+            auto = self.db.query(AutoManagement).filter(
+                AutoManagement.id == auto_id
+            ).first()
+            
+            if not auto:
+                raise HTTPException(status_code=404, detail="Auto not found")
+                
+            self.db.delete(auto)
+            self.db.commit()
+            return {"message": "Auto deleted successfully"}
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
 class AutoStudentMappingRepository:
     def __init__(self, db: Session):
         self.db = db
