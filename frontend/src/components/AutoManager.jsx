@@ -207,6 +207,10 @@ const AutoManager = () => {
     },
   ];
 
+  const filteredAutos = autos.filter(auto => 
+    auto.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
@@ -219,6 +223,7 @@ const AutoManager = () => {
             placeholder="Search autos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ minWidth: 200 }}
           />
         </Grid>
         <Grid item>
@@ -233,7 +238,7 @@ const AutoManager = () => {
 
       <div style={{ height: 400, width: '100%' }}>
         <DataGrid
-          rows={autos}
+          rows={filteredAutos}
           columns={columns}
           pageSize={5}
           rowsPerPageOptions={[5]}
