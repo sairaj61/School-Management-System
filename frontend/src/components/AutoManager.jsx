@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Box
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -165,14 +165,13 @@ const AutoManager = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 400,
+      width: 450,
       renderCell: (params) => (
-        <div>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap' }}>
           <Button
             variant="contained"
             size="small"
             onClick={() => handleModalOpen(params.row)}
-            sx={{ mr: 1 }}
           >
             Edit
           </Button>
@@ -181,7 +180,6 @@ const AutoManager = () => {
             color="primary"
             size="small"
             onClick={() => handleAssignModalOpen(params.row)}
-            sx={{ mr: 1 }}
           >
             Assign Students
           </Button>
@@ -190,7 +188,6 @@ const AutoManager = () => {
             color="info"
             size="small"
             onClick={() => handleViewStudentsModalOpen(params.row)}
-            sx={{ mr: 1 }}
           >
             View Students
           </Button>
@@ -202,7 +199,7 @@ const AutoManager = () => {
           >
             Delete
           </Button>
-        </div>
+        </Box>
       ),
     },
   ];
