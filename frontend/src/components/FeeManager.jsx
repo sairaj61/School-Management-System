@@ -331,6 +331,33 @@ const FeeManager = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Title and Actions Bar - Moved to top */}
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs>
+          <Typography variant="h4">Fee Payments</Typography>
+        </Grid>
+        <Grid item>
+          <TextField
+            size="small"
+            placeholder="Search by student name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mr: 2 }}
+          />
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() => handleModalOpen()}
+            startIcon={<PaymentIcon />}
+            sx={{ height: 40 }}
+          >
+            Add Payment
+          </Button>
+        </Grid>
+      </Grid>
+
+      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
@@ -465,28 +492,6 @@ const FeeManager = () => {
               </Grid>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-        <Grid item xs>
-          <Typography variant="h4">Fee Payments</Typography>
-        </Grid>
-        <Grid item>
-          <TextField
-            size="small"
-            placeholder="Search by student name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Grid>
-        <Grid item>
-          <Button
-            variant="contained"
-            onClick={() => handleModalOpen()}
-          >
-            Add Payment
-          </Button>
         </Grid>
       </Grid>
 
