@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box
+  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box, Paper
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -15,6 +15,22 @@ const MONTHS = [
   'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
 ];
+
+const containerStyle = {
+  minHeight: 'calc(100vh - 80px)', // Adjust for navbar height
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '32px 0'
+};
+
+const dataGridStyle = {
+  flex: 1,
+  width: '100%',
+  minHeight: '400px', // Minimum height
+  '& .MuiDataGrid-root': {
+    backgroundColor: 'white',
+  }
+};
 
 const FeeManager = () => {
   const [payments, setPayments] = useState([]);
@@ -330,82 +346,8 @@ const FeeManager = () => {
   ];
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Title and Actions Bar - Moved to top */}
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-        <Grid item xs>
-          <Typography variant="h4">Fee Payments</Typography>
-        </Grid>
-        <Grid item>
-          <TextField
-            size="small"
-            placeholder="Search by student name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ mr: 2 }}
-          />
-        </Grid>
-        <Grid item>
-          <Button
-            variant="contained"
-            onClick={() => handleModalOpen()}
-            startIcon={<PaymentIcon />}
-            sx={{ height: 40 }}
-          >
-            Add Payment
-          </Button>
-        </Grid>
-      </Grid>
-
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <PaymentIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Total Collected</Typography>
-              </Box>
-              <Typography variant="h4">₹{stats.totalCollected.toLocaleString()}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <PendingIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Pending Fees</Typography>
-              </Box>
-              <Typography variant="h4">₹{stats.pendingFees.toLocaleString()}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <CheckCircleIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Paid Students</Typography>
-              </Box>
-              <Typography variant="h4">{stats.paidStudents}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'error.light', color: 'white' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <TrendingUpIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Defaulters</Typography>
-              </Box>
-              <Typography variant="h4">{stats.defaulters}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Monthly Breakdown */}
+    <Container maxWidth="lg" sx={containerStyle}>
+      {/* Monthly Breakdown and All Time Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12}>
           <Card>
@@ -495,17 +437,50 @@ const FeeManager = () => {
         </Grid>
       </Grid>
 
-      <div style={{ height: 400, width: '100%' }}>
+      {/* Actions Bar */}
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs>
+          <Typography variant="h5">Payment Records</Typography>
+        </Grid>
+        <Grid item>
+          <TextField
+            size="small"
+            placeholder="Search by student name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mr: 2 }}
+          />
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() => handleModalOpen()}
+            startIcon={<PaymentIcon />}
+            sx={{ height: 40 }}
+          >
+            Add Payment
+          </Button>
+        </Grid>
+      </Grid>
+
+      {/* DataGrid */}
+      <Paper sx={dataGridStyle}>
         <DataGrid
           rows={filteredPayments}
           columns={columns}
-          pageSize={5}
-          rowsPerPageOptions={[5]}
+          pageSize={10}
+          rowsPerPageOptions={[10, 25, 50]}
           disableSelectionOnClick
           loading={loading}
           getRowId={(row) => row.id}
+          sx={{
+            height: '100%',
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: 'action.hover'
+            }
+          }}
         />
-      </div>
+      </Paper>
 
       <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
         <DialogTitle>
