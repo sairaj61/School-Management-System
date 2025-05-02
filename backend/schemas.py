@@ -152,4 +152,49 @@ class DashboardResponse(BaseModel):
     students_with_payments: List[StudentPaymentInfo]
 
     class Config:
+        orm_mode = True
+
+class AutoManagementBase(BaseModel):
+    name: str
+
+class AutoManagementCreate(AutoManagementBase):
+    pass
+
+class AutoManagementUpdate(AutoManagementBase):
+    name: Optional[str] = None
+
+class AutoManagementResponse(AutoManagementBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+class AutoStudentMappingBase(BaseModel):
+    auto_id: UUID
+    student_id: UUID
+
+class AutoStudentMappingCreate(AutoStudentMappingBase):
+    pass
+
+class AutoStudentMappingUpdate(AutoStudentMappingBase):
+    auto_id: Optional[UUID] = None
+    student_id: Optional[UUID] = None
+
+class AutoStudentMappingResponse(AutoStudentMappingBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+class AutoWithStudentsResponse(AutoManagementResponse):
+    students: List[UUID]
+
+class AutoStudentBulkAssignRequest(BaseModel):
+    auto_id: UUID
+    student_ids: List[UUID]
+
+class AutoWithStudentsListResponse(BaseModel):
+    autos: List[AutoWithStudentsResponse]
+
+    class Config:
         orm_mode = True 

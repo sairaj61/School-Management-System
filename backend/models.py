@@ -86,3 +86,21 @@ class FeePayment(Base):
     
     # Relationships
     student = relationship("Student", back_populates="fee_payments")
+
+class AutoManagement(Base):
+    __tablename__ = "auto_management"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
+    name = Column(String, nullable=False)
+    
+    # Relationship
+    students = relationship("AutoStudentMapping", back_populates="auto")
+
+class AutoStudentMapping(Base):
+    __tablename__ = "auto_student_mapping"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
+    auto_id = Column(UUID(as_uuid=True), ForeignKey("auto_management.id"), nullable=False)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("students.id"), nullable=False)
+    
+    # Relationships
+    auto = relationship("AutoManagement", back_populates="students")
+    student = relationship("Student", backref="auto_mappings")
