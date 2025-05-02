@@ -20,6 +20,8 @@ const AutoManager = () => {
   const [formData, setFormData] = useState({
     name: ''
   });
+  const [viewStudentsModalOpen, setViewStudentsModalOpen] = useState(false);
+  const [selectedAutoStudents, setSelectedAutoStudents] = useState([]);
 
   useEffect(() => {
     fetchAutos();
@@ -135,6 +137,23 @@ const AutoManager = () => {
     }
   };
 
+  const handleViewStudentsModalOpen = async (auto) => {
+    try {
+      const assignedStudents = students.filter(student => 
+        auto.students.includes(student.id)
+      );
+      setSelectedAutoStudents(assignedStudents);
+      setViewStudentsModalOpen(true);
+    } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
+
+  const handleViewStudentsModalClose = () => {
+    setViewStudentsModalOpen(false);
+    setSelectedAutoStudents([]);
+  };
+
   const columns = [
     { field: 'name', headerName: 'Auto Name', width: 200 },
     {
@@ -146,7 +165,7 @@ const AutoManager = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 300,
+      width: 400,
       renderCell: (params) => (
         <div>
           <Button
@@ -165,6 +184,15 @@ const AutoManager = () => {
             sx={{ mr: 1 }}
           >
             Assign Students
+          </Button>
+          <Button
+            variant="contained"
+            color="info"
+            size="small"
+            onClick={() => handleViewStudentsModalOpen(params.row)}
+            sx={{ mr: 1 }}
+          >
+            View Students
           </Button>
           <Button
             variant="contained"
@@ -274,6 +302,47 @@ const AutoManager = () => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* View Students Modal */}
+      <Dialog 
+        open={viewStudentsModalOpen} 
+        onClose={handleViewStudentsModalClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Assigned Students</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            {selectedAutoStudents.length > 0 ? (
+              <Grid item xs={12}>
+                <DataGrid
+                  rows={selectedAutoStudents}
+                  columns={[
+                    { field: 'name', headerName: 'Student Name', width: 200 },
+                    { field: 'roll_number', headerName: 'Roll Number', width: 150 },
+                    { field: 'father_name', headerName: 'Father Name', width: 200 },
+                    { field: 'contact', headerName: 'Contact', width: 150 }
+                  ]}
+                  autoHeight
+                  pageSize={5}
+                  rowsPerPageOptions={[5]}
+                  disableSelectionOnClick
+                  getRowId={(row) => row.id}
+                />
+              </Grid>
+            ) : (
+              <Grid item xs={12}>
+                <Typography variant="body1" align="center">
+                  No students assigned to this auto
+                </Typography>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleViewStudentsModalClose}>Close</Button>
+        </DialogActions>
       </Dialog>
 
       <Snackbar
