@@ -126,6 +126,8 @@ const AutoManager = () => {
     setAssignModalOpen(false);
     setSelectedAuto(null);
     setSelectedStudents([]);
+    setSearchStudentTerm('');
+    setFilteredAssignStudents(students);
   };
 
   const handleInputChange = (e) => {
@@ -196,7 +198,7 @@ const AutoManager = () => {
 
   const handleViewStudentsModalClose = () => {
     setViewStudentsModalOpen(false);
-    setSelectedAutoStudents([]);
+    setSelectedAuto(null);
   };
 
   const ViewStudentsModal = ({ auto, open, onClose }) => {
@@ -518,7 +520,7 @@ const AutoManager = () => {
 
       {/* Student Assignment Dialog */}
       <Dialog 
-        open={Boolean(selectedAuto)} 
+        open={assignModalOpen}
         onClose={handleAssignModalClose}
         maxWidth="md"
         fullWidth
