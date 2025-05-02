@@ -37,11 +37,18 @@ const AutoManager = () => {
     activeAutos: 0
   });
   const [filteredStudents, setFilteredStudents] = useState([]);
+  const [searchStudentTerm, setSearchStudentTerm] = useState('');
+  const [filteredAssignStudents, setFilteredAssignStudents] = useState([]);
 
   useEffect(() => {
     fetchAutos();
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    // Initialize filtered students when students list changes
+    setFilteredAssignStudents(students);
+  }, [students]);
 
   const calculateStats = (autoData) => {
     if (!autoData || !Array.isArray(autoData)) {
@@ -379,6 +386,23 @@ const AutoManager = () => {
     setFilteredStudents(filtered);
   };
 
+  const handleStudentSearchAssign = (event, value) => {
+    setSearchStudentTerm(value);
+    if (!value) {
+      setFilteredAssignStudents(students);
+      return;
+    }
+    
+    const filtered = students.filter(student => 
+      student.name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.roll_number?.toLowerCase().includes(value.toLowerCase()) ||
+      student.father_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.class_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.section_name?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredAssignStudents(filtered);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Stats Cards */}
@@ -510,40 +534,91 @@ const AutoManager = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            {students.map((student) => (
-              <Paper 
-                key={student.id} 
-                sx={{ 
-                  p: 2, 
-                  mb: 1, 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  backgroundColor: selectedStudents.includes(student.id) ? '#e3f2fd' : 'white'
-                }}
-              >
-                <Checkbox
-                  checked={selectedStudents.includes(student.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedStudents([...selectedStudents, student.id]);
-                    } else {
-                      setSelectedStudents(selectedStudents.filter(id => id !== student.id));
-                    }
-                  }}
-                />
-                <Box sx={{ ml: 2 }}>
-                  <Typography variant="subtitle1">
-                    {student.name} ({student.roll_number})
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Class: {student.class_name} | Section: {student.section_name}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Father's Name: {student.father_name}
-                  </Typography>
+            {/* Add Autocomplete for search */}
+            <Autocomplete
+              fullWidth
+              options={students}
+              getOptionLabel={(student) => 
+                `${student.name} - ${student.roll_number} (${student.class_name} - ${student.section_name})`
+              }
+              renderOption={(props, student) => (
+                <Box component="li" {...props}>
+                  <Box>
+                    <Typography variant="subtitle1">
+                      {student.name} ({student.roll_number})
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Class: {student.class_name} | Section: {student.section_name}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Father's Name: {student.father_name}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Paper>
-            ))}
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search Students"
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                />
+              )}
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  // Add student to selection if not already selected
+                  if (!selectedStudents.includes(newValue.id)) {
+                    setSelectedStudents([...selectedStudents, newValue.id]);
+                  }
+                }
+              }}
+            />
+
+            {/* Display selected and filtered students */}
+            <Box sx={{ maxHeight: '400px', overflow: 'auto', mt: 2 }}>
+              {students
+                .filter(student => 
+                  selectedStudents.includes(student.id) || 
+                  student.name?.toLowerCase().includes(searchStudentTerm.toLowerCase()) ||
+                  student.roll_number?.toLowerCase().includes(searchStudentTerm.toLowerCase()) ||
+                  student.class_name?.toLowerCase().includes(searchStudentTerm.toLowerCase()) ||
+                  student.section_name?.toLowerCase().includes(searchStudentTerm.toLowerCase())
+                )
+                .map((student) => (
+                  <Paper 
+                    key={student.id} 
+                    sx={{ 
+                      p: 2, 
+                      mb: 1, 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      backgroundColor: selectedStudents.includes(student.id) ? '#e3f2fd' : 'white'
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedStudents.includes(student.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStudents([...selectedStudents, student.id]);
+                        } else {
+                          setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                        }
+                      }}
+                    />
+                    <Box sx={{ ml: 2 }}>
+                      <Typography variant="subtitle1">
+                        {student.name} ({student.roll_number})
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Class: {student.class_name} | Section: {student.section_name}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Father's Name: {student.father_name}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
