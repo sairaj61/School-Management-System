@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
+import PaymentIcon from '@mui/icons-material/Payment';
+import PendingIcon from '@mui/icons-material/Pending';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 const MONTHS = [
   'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
@@ -26,6 +30,12 @@ const FeeManager = () => {
     tuition_fees: '',
     auto_fees: '',
     day_boarding_fees: ''
+  });
+  const [stats, setStats] = useState({
+    totalCollected: 0,
+    pendingFees: 0,
+    paidStudents: 0,
+    defaulters: 0
   });
 
   useEffect(() => {
@@ -148,6 +158,32 @@ const FeeManager = () => {
     return searchString.includes(searchTerm.toLowerCase());
   });
 
+  const calculateStats = () => {
+    const totalCollected = payments.reduce((sum, payment) => sum + payment.total_amount, 0);
+    const paidStudents = new Set(payments.map(payment => payment.student_id)).size;
+    const defaulters = students.length - paidStudents;
+    const pendingFees = students.reduce((sum, student) => {
+      const totalFees = student.tuition_fees + student.auto_fees + student.day_boarding_fees;
+      const paid = payments
+        .filter(payment => payment.student_id === student.id)
+        .reduce((sum, payment) => sum + payment.total_amount, 0);
+      return sum + (totalFees - paid);
+    }, 0);
+
+    setStats({
+      totalCollected,
+      pendingFees,
+      paidStudents,
+      defaulters
+    });
+  };
+
+  useEffect(() => {
+    if (students.length && payments.length) {
+      calculateStats();
+    }
+  }, [students, payments]);
+
   const columns = [
     {
       field: 'student_name',
@@ -243,7 +279,54 @@ const FeeManager = () => {
   ];
 
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <PaymentIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Collected</Typography>
+              </Box>
+              <Typography variant="h4">₹{stats.totalCollected.toLocaleString()}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <PendingIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Pending Fees</Typography>
+              </Box>
+              <Typography variant="h4">₹{stats.pendingFees.toLocaleString()}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <CheckCircleIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Paid Students</Typography>
+              </Box>
+              <Typography variant="h4">{stats.paidStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'error.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <TrendingUpIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Defaulters</Typography>
+              </Box>
+              <Typography variant="h4">{stats.defaulters}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Grid item xs>
           <Typography variant="h4">Fee Payments</Typography>

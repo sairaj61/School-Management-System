@@ -12,13 +12,21 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Card,
+  CardContent,
+  Box
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
+import ClassIcon from '@mui/icons-material/Class';
+import GroupIcon from '@mui/icons-material/Group';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import SchoolIcon from '@mui/icons-material/School';
 
 const ClassManager = () => {
   const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
@@ -29,10 +37,17 @@ const ClassManager = () => {
     name: '',
     academic_year_id: ''
   });
+  const [stats, setStats] = useState({
+    totalClasses: 0,
+    totalStudents: 0,
+    averageStudents: 0,
+    activeClasses: 0
+  });
 
   useEffect(() => {
     fetchClasses();
     fetchAcademicYears();
+    fetchStudents();
   }, []);
 
   const fetchClasses = async () => {
@@ -51,6 +66,15 @@ const ClassManager = () => {
     try {
       const response = await axios.get('http://localhost:8000/academic-years/');
       setAcademicYears(response.data);
+    } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/students/');
+      setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
     }
@@ -129,6 +153,30 @@ const ClassManager = () => {
     cls.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const calculateStats = () => {
+    try {
+      const totalClasses = classes.length;
+      const activeClasses = classes.filter(cls => cls.is_active).length;
+      const totalStudents = students.length;
+      const averageStudents = totalClasses ? Math.round(totalStudents / totalClasses) : 0;
+
+      setStats({
+        totalClasses,
+        totalStudents,
+        averageStudents,
+        activeClasses
+      });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (classes.length > 0 && students.length > 0) {
+      calculateStats();
+    }
+  }, [classes, students]);
+
   const columns = [
     { field: 'name', headerName: 'Name', width: 150 },
     {
@@ -169,7 +217,54 @@ const ClassManager = () => {
   ];
 
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'primary.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <ClassIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Classes</Typography>
+              </Box>
+              <Typography variant="h4">{stats.totalClasses}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <GroupIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Students</Typography>
+              </Box>
+              <Typography variant="h4">{stats.totalStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <AutoStoriesIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Avg. Students/Class</Typography>
+              </Box>
+              <Typography variant="h4">{stats.averageStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <SchoolIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Active Classes</Typography>
+              </Box>
+              <Typography variant="h4">{stats.activeClasses}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Grid item xs>
           <Typography variant="h4">Classes</Typography>

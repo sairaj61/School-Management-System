@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
+import ViewWeekIcon from '@mui/icons-material/ViewWeek';
+import GroupsIcon from '@mui/icons-material/Groups';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ClassIcon from '@mui/icons-material/Class';
 
 const SectionManager = () => {
   const [sections, setSections] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [modalOpen, setModalOpen] = useState(false);
@@ -19,11 +24,27 @@ const SectionManager = () => {
     name: '',
     class_id: ''
   });
+  const [stats, setStats] = useState({
+    totalSections: 0,
+    totalStudents: 0,
+    averageStudents: 0,
+    classesWithSections: 0
+  });
 
   useEffect(() => {
     fetchSections();
     fetchClasses();
+    fetchStudents();
   }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/students/');
+      setStudents(response.data);
+    } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
 
   const fetchSections = async () => {
     try {
@@ -120,6 +141,32 @@ const SectionManager = () => {
     return searchString.includes(searchTerm.toLowerCase());
   });
 
+  const calculateStats = () => {
+    try {
+      if (!sections.length || !students.length) return;
+
+      const totalSections = sections.length;
+      const totalStudents = students.length;
+      const averageStudents = totalSections ? Math.round(totalStudents / totalSections) : 0;
+      const classesWithSections = new Set(sections.map(section => section.class_id)).size;
+
+      setStats({
+        totalSections,
+        totalStudents,
+        averageStudents,
+        classesWithSections
+      });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (sections.length > 0 && students.length > 0) {
+      calculateStats();
+    }
+  }, [sections, students]);
+
   const columns = [
     { field: 'name', headerName: 'Name', width: 150 },
     {
@@ -160,7 +207,54 @@ const SectionManager = () => {
   ];
 
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'primary.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <ViewWeekIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Sections</Typography>
+              </Box>
+              <Typography variant="h4">{stats.totalSections}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <GroupsIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Students</Typography>
+              </Box>
+              <Typography variant="h4">{stats.totalStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <BarChartIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Avg. Students/Section</Typography>
+              </Box>
+              <Typography variant="h4">{stats.averageStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <ClassIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Classes with Sections</Typography>
+              </Box>
+              <Typography variant="h4">{stats.classesWithSections}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Grid item xs>
           <Typography variant="h4">Sections</Typography>
