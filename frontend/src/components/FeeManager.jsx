@@ -37,6 +37,20 @@ const FeeManager = () => {
     paidStudents: 0,
     defaulters: 0
   });
+  const [monthlyStats, setMonthlyStats] = useState({
+    currentMonth: {
+      totalCollected: 0,
+      tuitionFees: 0,
+      autoFees: 0,
+      dayBoardingFees: 0
+    },
+    allTime: {
+      totalCollected: 0,
+      tuitionFees: 0,
+      autoFees: 0,
+      dayBoardingFees: 0
+    }
+  });
 
   useEffect(() => {
     fetchPayments();
@@ -159,23 +173,60 @@ const FeeManager = () => {
   });
 
   const calculateStats = () => {
-    const totalCollected = payments.reduce((sum, payment) => sum + payment.total_amount, 0);
-    const paidStudents = new Set(payments.map(payment => payment.student_id)).size;
-    const defaulters = students.length - paidStudents;
-    const pendingFees = students.reduce((sum, student) => {
-      const totalFees = student.tuition_fees + student.auto_fees + student.day_boarding_fees;
-      const paid = payments
-        .filter(payment => payment.student_id === student.id)
-        .reduce((sum, payment) => sum + payment.total_amount, 0);
-      return sum + (totalFees - paid);
-    }, 0);
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
+      const currentYear = currentDate.getFullYear();
 
-    setStats({
-      totalCollected,
-      pendingFees,
-      paidStudents,
-      defaulters
-    });
+      // Filter payments for current month
+      const currentMonthPayments = payments.filter(payment => {
+        const paymentDate = new Date(payment.transaction_date);
+        return paymentDate.getMonth() + 1 === currentMonth && 
+               paymentDate.getFullYear() === currentYear;
+      });
+
+      // Calculate current month stats
+      const currentMonthStats = {
+        totalCollected: currentMonthPayments.reduce((sum, payment) => sum + payment.total_amount, 0),
+        tuitionFees: currentMonthPayments.reduce((sum, payment) => sum + payment.tuition_fees, 0),
+        autoFees: currentMonthPayments.reduce((sum, payment) => sum + payment.auto_fees, 0),
+        dayBoardingFees: currentMonthPayments.reduce((sum, payment) => sum + payment.day_boarding_fees, 0)
+      };
+
+      // Calculate all time stats
+      const allTimeStats = {
+        totalCollected: payments.reduce((sum, payment) => sum + payment.total_amount, 0),
+        tuitionFees: payments.reduce((sum, payment) => sum + payment.tuition_fees, 0),
+        autoFees: payments.reduce((sum, payment) => sum + payment.auto_fees, 0),
+        dayBoardingFees: payments.reduce((sum, payment) => sum + payment.day_boarding_fees, 0)
+      };
+
+      // Update monthly stats
+      setMonthlyStats({
+        currentMonth: currentMonthStats,
+        allTime: allTimeStats
+      });
+
+      // Update existing stats
+      const paidStudents = new Set(payments.map(payment => payment.student_id)).size;
+      const defaulters = students.length - paidStudents;
+      const pendingFees = students.reduce((sum, student) => {
+        const totalFees = student.tuition_fees + student.auto_fees + student.day_boarding_fees;
+        const paid = payments
+          .filter(payment => payment.student_id === student.id)
+          .reduce((sum, payment) => sum + payment.total_amount, 0);
+        return sum + (totalFees - paid);
+      }, 0);
+
+      setStats({
+        totalCollected: allTimeStats.totalCollected,
+        pendingFees,
+        paidStudents,
+        defaulters
+      });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+    }
   };
 
   useEffect(() => {
@@ -322,6 +373,96 @@ const FeeManager = () => {
                 <Typography variant="h6">Defaulters</Typography>
               </Box>
               <Typography variant="h4">{stats.defaulters}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Monthly Breakdown */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Current Month Breakdown ({new Date().toLocaleString('default', { month: 'long' })})
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'primary.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Total Collected</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.currentMonth.totalCollected.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'success.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Tuition Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.currentMonth.tuitionFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'info.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Auto Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.currentMonth.autoFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'warning.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Day Boarding Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.currentMonth.dayBoardingFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* All Time Stats */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>All Time Collection</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'primary.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Total Collected</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.allTime.totalCollected.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'success.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Tuition Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.allTime.tuitionFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'info.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Auto Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.allTime.autoFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ p: 2, bgcolor: 'warning.light', color: 'white', borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Day Boarding Fees</Typography>
+                    <Typography variant="h6">
+                      ₹{monthlyStats.allTime.dayBoardingFees.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>
