@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box, Paper
+  Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box, Paper, Autocomplete
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -67,6 +67,7 @@ const FeeManager = () => {
       dayBoardingFees: 0
     }
   });
+  const [filteredStudents, setFilteredStudents] = useState([]);
 
   useEffect(() => {
     fetchPayments();
@@ -180,6 +181,23 @@ const FeeManager = () => {
         handleApiError(error, setAlert);
       }
     }
+  };
+
+  const handleStudentSearch = (event, value) => {
+    setSearchTerm(value);
+    if (!value) {
+      setFilteredStudents(students);
+      return;
+    }
+    
+    const filtered = students.filter(student => 
+      student.name.toLowerCase().includes(value.toLowerCase()) ||
+      student.roll_number?.toLowerCase().includes(value.toLowerCase()) ||
+      student.father_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.class_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.section_name?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStudents(filtered);
   };
 
   const filteredPayments = payments.filter(payment => {
@@ -496,21 +514,46 @@ const FeeManager = () => {
           <DialogContent>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  select
+                <Autocomplete
                   fullWidth
-                  label="Student"
-                  name="student_id"
-                  value={formData.student_id}
-                  onChange={handleInputChange}
-                  required
-                >
-                  {students.map((student) => (
-                    <MenuItem key={student.id} value={student.id}>
-                      {student.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  options={students}
+                  getOptionLabel={(student) => 
+                    `${student.name} - ${student.roll_number} (${student.class_name} ${student.section_name})`
+                  }
+                  renderOption={(props, student) => (
+                    <Box component="li" {...props}>
+                      <Box>
+                        <Typography variant="subtitle1">
+                          {student.name} ({student.roll_number})
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Class: {student.class_name} | Section: {student.section_name}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Father's Name: {student.father_name}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Search Student"
+                      variant="outlined"
+                      onChange={(e) => handleStudentSearch(e, e.target.value)}
+                    />
+                  )}
+                  onChange={(event, newValue) => {
+                    setFormData({
+                      ...formData,
+                      student_id: newValue?.id || '',
+                      tuition_fees: newValue?.tuition_fees?.toString() || '',
+                      auto_fees: newValue?.auto_fees?.toString() || '',
+                      day_boarding_fees: newValue?.day_boarding_fees?.toString() || ''
+                    });
+                  }}
+                  value={students.find(student => student.id === formData.student_id)}
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField

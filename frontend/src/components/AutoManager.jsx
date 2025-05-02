@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent,
-  IconButton, Tooltip, Chip, Table, TableHead, TableBody, TableRow, TableCell
+  IconButton, Tooltip, Chip, Table, TableHead, TableBody, TableRow, TableCell, Autocomplete
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -13,6 +13,7 @@ import ClassIcon from '@mui/icons-material/Class';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
+import { Checkbox } from '@mui/material';
 
 const AutoManager = () => {
   const [autos, setAutos] = useState([]);
@@ -35,6 +36,7 @@ const AutoManager = () => {
     totalFees: 0,
     activeAutos: 0
   });
+  const [filteredStudents, setFilteredStudents] = useState([]);
 
   useEffect(() => {
     fetchAutos();
@@ -354,6 +356,23 @@ const AutoManager = () => {
     auto?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleStudentSearch = (event, value) => {
+    setSearchTerm(value);
+    if (!value) {
+      setFilteredStudents(students);
+      return;
+    }
+    
+    const filtered = students.filter(student => 
+      student.name.toLowerCase().includes(value.toLowerCase()) ||
+      student.roll_number?.toLowerCase().includes(value.toLowerCase()) ||
+      student.father_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.class_name?.toLowerCase().includes(value.toLowerCase()) ||
+      student.section_name?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStudents(filtered);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Stats Cards */}
@@ -470,35 +489,77 @@ const AutoManager = () => {
       {/* Assign Students Modal */}
       <Dialog open={assignModalOpen} onClose={handleAssignModalClose}>
         <DialogTitle>Assign Students to Auto</DialogTitle>
-        <form onSubmit={handleAssignSubmit}>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  select
-                  fullWidth
-                  SelectProps={{ multiple: true }}
-                  label="Select Students"
-                  value={selectedStudents}
-                  onChange={handleStudentSelection}
-                  required
-                >
-                  {students.map((student) => (
-                    <MenuItem key={student.id} value={student.id}>
-                      {student.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleAssignModalClose}>Cancel</Button>
-            <Button type="submit" variant="contained" color="primary">
-              Assign Students
+        <Paper sx={{ mt: 3, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Assign Students to {selectedAuto?.name}
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Search Students"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => handleStudentSearch(e, e.target.value)}
+            sx={{ mb: 2 }}
+          />
+
+          <Box sx={{ maxHeight: '400px', overflow: 'auto' }}>
+            {filteredStudents.map((student) => (
+              <Paper 
+                key={student.id} 
+                sx={{ 
+                  p: 2, 
+                  mb: 1, 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  backgroundColor: selectedStudents.includes(student.id) ? '#e3f2fd' : 'white'
+                }}
+              >
+                <Checkbox
+                  checked={selectedStudents.includes(student.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedStudents([...selectedStudents, student.id]);
+                    } else {
+                      setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                    }
+                  }}
+                />
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="subtitle1">
+                    {student.name} ({student.roll_number})
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Class: {student.class_name} | Section: {student.section_name}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Father's Name: {student.father_name}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => handleAssignSubmit(selectedAuto.id)}
+              disabled={selectedStudents.length === 0}
+            >
+              Assign Selected Students ({selectedStudents.length})
             </Button>
-          </DialogActions>
-        </form>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setSelectedAuto(null);
+                setSelectedStudents([]);
+                setSearchTerm('');
+              }}
+            >
+              Cancel
+            </Button>
+          </Box>
+        </Paper>
       </Dialog>
 
       {/* View Students Modal */}
