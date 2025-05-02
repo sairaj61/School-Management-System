@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent,
-  IconButton, Tooltip, Chip
+  IconButton, Tooltip, Chip, Table, TableHead, TableBody, TableRow, TableCell
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -11,6 +11,8 @@ import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import GroupIcon from '@mui/icons-material/Group';
 import ClassIcon from '@mui/icons-material/Class';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import CloseIcon from '@mui/icons-material/Close';
+import PaymentIcon from '@mui/icons-material/Payment';
 
 const AutoManager = () => {
   const [autos, setAutos] = useState([]);
@@ -31,8 +33,7 @@ const AutoManager = () => {
     totalAutos: 0,
     totalStudents: 0,
     totalFees: 0,
-    classDistribution: {},
-    sectionDistribution: {}
+    activeAutos: 0
   });
 
   useEffect(() => {
@@ -40,19 +41,37 @@ const AutoManager = () => {
     fetchStudents();
   }, []);
 
-  useEffect(() => {
-    if (autos.length > 0 && students.length > 0) {
-      calculateStats();
+  const calculateStats = (autoData) => {
+    if (!autoData || !Array.isArray(autoData)) {
+      setStats({
+        totalAutos: 0,
+        totalStudents: 0,
+        totalFees: 0,
+        activeAutos: 0
+      });
+      return;
     }
-  }, [autos, students]);
+
+    const stats = {
+      totalAutos: autoData.length,
+      totalStudents: autoData.reduce((sum, auto) => sum + (auto.students?.length || 0), 0),
+      totalFees: autoData.reduce((sum, auto) => sum + (auto.total_fees || 0), 0),
+      activeAutos: autoData.filter(auto => auto.students?.length > 0).length
+    };
+    setStats(stats);
+  };
 
   const fetchAutos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/auto-management/with-students');
-      setAutos(response.data);
+      const response = await axios.get('http://localhost:8000/auto-management/autos/with-students');
+      const autoData = response.data || [];
+      setAutos(autoData);
+      calculateStats(autoData);
     } catch (error) {
       handleApiError(error, setAlert);
+      setAutos([]);
+      calculateStats([]);
     } finally {
       setLoading(false);
     }
@@ -63,47 +82,6 @@ const AutoManager = () => {
       const response = await axios.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
-      handleApiError(error, setAlert);
-    }
-  };
-
-  const calculateStats = () => {
-    try {
-      const classMap = {};
-      const sectionMap = {};
-      let totalStudents = 0;
-      let totalFees = 0;
-
-      autos.forEach(auto => {
-        const autoStudents = auto.students || [];
-        totalStudents += autoStudents.length;
-        
-        autoStudents.forEach(studentId => {
-          const student = students.find(s => s.id === studentId);
-          if (student) {
-            // Add to class distribution
-            const className = student.class_name || 'Unassigned';
-            classMap[className] = (classMap[className] || 0) + 1;
-            
-            // Add to section distribution
-            const sectionName = student.section_name || 'Unassigned';
-            sectionMap[sectionName] = (sectionMap[sectionName] || 0) + 1;
-            
-            // Add fees
-            totalFees += student.auto_fees || 0;
-          }
-        });
-      });
-
-      setStats({
-        totalAutos: autos.length,
-        totalStudents,
-        totalFees,
-        classDistribution: classMap,
-        sectionDistribution: sectionMap
-      });
-    } catch (error) {
-      console.error('Error calculating stats:', error);
       handleApiError(error, setAlert);
     }
   };
@@ -157,10 +135,10 @@ const AutoManager = () => {
     e.preventDefault();
     try {
       if (selectedAuto) {
-        await axios.put(`http://localhost:8000/auto-management/${selectedAuto.id}`, formData);
+        await axios.put(`http://localhost:8000/auto-management/autos/${selectedAuto.id}`, formData);
         setAlert({ open: true, message: 'Auto updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/auto-management/', formData);
+        await axios.post('http://localhost:8000/auto-management/autos/', formData);
         setAlert({ open: true, message: 'Auto added successfully!', severity: 'success' });
       }
       handleModalClose();
@@ -173,8 +151,8 @@ const AutoManager = () => {
   const handleAssignSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`http://localhost:8000/auto-management/${selectedAuto.id}/assign-students`, 
-        selectedStudents  // Send the array directly, not wrapped in an object
+      await axios.post(`http://localhost:8000/auto-management/autos/${selectedAuto.id}/assign-students`, 
+        selectedStudents
       );
       setAlert({ open: true, message: 'Students assigned successfully!', severity: 'success' });
       handleAssignModalClose();
@@ -187,7 +165,7 @@ const AutoManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this auto?')) {
       try {
-        await axios.delete(`http://localhost:8000/auto-management/${id}`);
+        await axios.delete(`http://localhost:8000/auto-management/autos/${id}`);
         setAlert({ open: true, message: 'Auto deleted successfully!', severity: 'success' });
         fetchAutos();
       } catch (error) {
@@ -196,16 +174,9 @@ const AutoManager = () => {
     }
   };
 
-  const handleViewStudentsModalOpen = async (auto) => {
-    try {
-      const assignedStudents = students.filter(student => 
-        auto.students.includes(student.id)
-      );
-      setSelectedAutoStudents(assignedStudents);
-      setViewStudentsModalOpen(true);
-    } catch (error) {
-      handleApiError(error, setAlert);
-    }
+  const handleViewStudentsModalOpen = (auto) => {
+    setSelectedAuto(auto);
+    setViewStudentsModalOpen(true);
   };
 
   const handleViewStudentsModalClose = () => {
@@ -213,13 +184,129 @@ const AutoManager = () => {
     setSelectedAutoStudents([]);
   };
 
+  const ViewStudentsModal = ({ auto, open, onClose }) => {
+    const studentDetails = auto?.student_details || [];
+    
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">
+              Students in {auto?.name}
+              <Chip 
+                label={`Total: ₹${auto?.total_fees?.toLocaleString()}`}
+                color="success"
+                sx={{ ml: 2 }}
+              />
+            </Typography>
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Roll No.</TableCell>
+                <TableCell>Student Name</TableCell>
+                <TableCell>Class</TableCell>
+                <TableCell>Section</TableCell>
+                <TableCell>Contact</TableCell>
+                <TableCell>Address</TableCell>
+                <TableCell align="right">Auto Fee</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {studentDetails.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell>{student.roll_number}</TableCell>
+                  <TableCell>{student.name}</TableCell>
+                  <TableCell>{student.class_name}</TableCell>
+                  <TableCell>{student.section_name}</TableCell>
+                  <TableCell>{student.contact_number}</TableCell>
+                  <TableCell>{student.address}</TableCell>
+                  <TableCell align="right">
+                    <Typography color="success.main" fontWeight="medium">
+                      ₹{student.auto_fees.toLocaleString()}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {studentDetails.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <Typography color="text.secondary">No students assigned</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+              {studentDetails.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ fontWeight: 'bold' }}>
+                    Total Revenue
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography color="success.main" fontWeight="bold">
+                      ₹{auto?.total_fees?.toLocaleString()}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   const columns = [
-    { field: 'name', headerName: 'Auto Name', width: 200 },
+    { 
+      field: 'name', 
+      headerName: 'Auto Name', 
+      width: 200,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DirectionsBusIcon color="primary" />
+          <Typography>{params.value}</Typography>
+        </Box>
+      )
+    },
     {
       field: 'studentCount',
-      headerName: 'Assigned Students',
+      headerName: 'Students',
+      width: 120,
+      valueGetter: (params) => params.row.students.length,
+      renderCell: (params) => (
+        <Chip
+          label={`${params.value} students`}
+          color={params.value > 0 ? "primary" : "default"}
+          size="small"
+        />
+      )
+    },
+    {
+      field: 'total_fees',
+      headerName: 'Monthly Revenue',
       width: 150,
-      valueGetter: (params) => params.row.students?.length || 0
+      renderCell: (params) => (
+        <Typography color={params.value > 0 ? "success.main" : "text.secondary"} fontWeight="medium">
+          ₹{params.value.toLocaleString()}
+        </Typography>
+      )
+    },
+    {
+      field: 'avgFees',
+      headerName: 'Avg. Fee/Student',
+      width: 150,
+      valueGetter: (params) => {
+        const count = params.row.students.length;
+        return count > 0 ? Math.round(params.row.total_fees / count) : 0;
+      },
+      renderCell: (params) => (
+        <Typography color={params.value > 0 ? "info.main" : "text.secondary"}>
+          ₹{params.value.toLocaleString()}
+        </Typography>
+      )
     },
     {
       field: 'actions',
@@ -264,12 +351,12 @@ const AutoManager = () => {
   ];
 
   const filteredAutos = autos.filter(auto => 
-    auto.name.toLowerCase().includes(searchTerm.toLowerCase())
+    auto?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Statistics Cards */}
+      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'primary.light', color: 'white' }}>
@@ -297,10 +384,10 @@ const AutoManager = () => {
           <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" mb={1}>
-                <ClassIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Classes Covered</Typography>
+                <DirectionsBusIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Active Autos</Typography>
               </Box>
-              <Typography variant="h3">{Object.keys(stats.classDistribution).length}</Typography>
+              <Typography variant="h3">{stats.activeAutos}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -308,8 +395,8 @@ const AutoManager = () => {
           <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" mb={1}>
-                <AccountBalanceIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Total Fees</Typography>
+                <PaymentIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Monthly Revenue</Typography>
               </Box>
               <Typography variant="h3">₹{stats.totalFees.toLocaleString()}</Typography>
             </CardContent>
@@ -348,7 +435,8 @@ const AutoManager = () => {
           rowsPerPageOptions={[5]}
           disableSelectionOnClick
           loading={loading}
-          getRowId={(row) => row.id}
+          getRowId={(row) => row?.id}
+          error={alert.severity === 'error' ? alert.message : null}
         />
       </div>
 
@@ -414,45 +502,11 @@ const AutoManager = () => {
       </Dialog>
 
       {/* View Students Modal */}
-      <Dialog 
-        open={viewStudentsModalOpen} 
+      <ViewStudentsModal
+        auto={selectedAuto}
+        open={viewStudentsModalOpen}
         onClose={handleViewStudentsModalClose}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Assigned Students</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {selectedAutoStudents.length > 0 ? (
-              <Grid item xs={12}>
-                <DataGrid
-                  rows={selectedAutoStudents}
-                  columns={[
-                    { field: 'name', headerName: 'Student Name', width: 200 },
-                    { field: 'roll_number', headerName: 'Roll Number', width: 150 },
-                    { field: 'father_name', headerName: 'Father Name', width: 200 },
-                    { field: 'contact', headerName: 'Contact', width: 150 }
-                  ]}
-                  autoHeight
-                  pageSize={5}
-                  rowsPerPageOptions={[5]}
-                  disableSelectionOnClick
-                  getRowId={(row) => row.id}
-                />
-              </Grid>
-            ) : (
-              <Grid item xs={12}>
-                <Typography variant="body1" align="center">
-                  No students assigned to this auto
-                </Typography>
-              </Grid>
-            )}
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleViewStudentsModalClose}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      />
 
       <Snackbar
         open={alert.open}

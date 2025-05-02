@@ -2,13 +2,17 @@ from fastapi import APIRouter, Depends, Body
 from services.auto_management_service import AutoManagementService
 from schemas import (
     AutoManagementCreate, AutoManagementUpdate, AutoManagementResponse,
-    AutoStudentMappingCreate, AutoStudentMappingResponse, AutoWithStudentsResponse
+    AutoStudentMappingCreate, AutoStudentMappingResponse, AutoWithStudentsResponse,
+    AutoStudentBulkAssignRequest
 )
 from database import get_db
 from uuid import UUID
 from typing import List
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/auto-management",
+    tags=["Auto Management"]
+)
 
 @router.get("/", response_model=list[AutoManagementResponse])
 def get_autos(db=Depends(get_db)):
@@ -58,6 +62,20 @@ def get_auto_students(auto_id: UUID, db=Depends(get_db)):
 
 @router.get("/with-students", response_model=List[AutoWithStudentsResponse])
 def get_all_autos_with_students(db=Depends(get_db)):
-    """Get all autos with their student mappings"""
+    """
+    Get all autos with their student details and fees
+    
+    Returns a list of autos with detailed information about assigned students including:
+    - Basic auto information (id, name)
+    - List of assigned student IDs
+    - Total fees collected from all students
+    - Detailed student information including:
+        - Student name
+        - Roll number
+        - Class and section
+        - Contact information
+        - Address
+        - Auto fees
+    """
     service = AutoManagementService(db)
     return service.get_all_autos_with_students() 

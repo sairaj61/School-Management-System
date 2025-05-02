@@ -186,8 +186,32 @@ class AutoStudentMappingResponse(AutoStudentMappingBase):
     class Config:
         orm_mode = True
 
-class AutoWithStudentsResponse(AutoManagementResponse):
+class StudentDetailResponse(BaseModel):
+    id: UUID
+    auto_fees: float
+
+class StudentDetailInAutoResponse(BaseModel):
+    id: UUID
+    name: str
+    roll_number: str
+    class_name: str
+    section_name: str
+    contact_number: Optional[str]
+    address: Optional[str]
+    auto_fees: float
+
+    class Config:
+        orm_mode = True
+
+class AutoWithStudentsResponse(BaseModel):
+    id: UUID
+    name: str
     students: List[UUID]
+    total_fees: float
+    student_details: List[StudentDetailInAutoResponse]
+
+    class Config:
+        orm_mode = True
 
 class AutoStudentBulkAssignRequest(BaseModel):
     auto_id: UUID
