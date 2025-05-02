@@ -11,6 +11,7 @@ const Navbar = () => {
       case '/classes': return 2;
       case '/sections': return 3;
       case '/fees': return 4;
+      case '/auto': return 5;
       default: return 0;
     }
   };
@@ -27,6 +28,7 @@ const Navbar = () => {
           <Tab label="Classes" component={NavLink} to="/classes" />
           <Tab label="Sections" component={NavLink} to="/sections" />
           <Tab label="Fees" component={NavLink} to="/fees" />
+          <Tab label="Auto" component={NavLink} to="/auto" />
         </Tabs>
       </Toolbar>
     </AppBar>

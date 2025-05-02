@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from services.auto_management_service import AutoManagementService
 from schemas import (
     AutoManagementCreate, AutoManagementUpdate, AutoManagementResponse,
@@ -43,7 +43,7 @@ def assign_student(mapping: AutoStudentMappingCreate, db=Depends(get_db)):
 @router.post("/{auto_id}/assign-students")
 def assign_students_bulk(
     auto_id: UUID, 
-    student_ids: List[UUID], 
+    student_ids: List[UUID] = Body(...),
     db=Depends(get_db)
 ):
     """Assign multiple students to an auto"""

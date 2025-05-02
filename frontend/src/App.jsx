@@ -6,6 +6,7 @@ import StudentManager from './components/StudentManager';
 import ClassManager from './components/ClassManager';
 import SectionManager from './components/SectionManager';
 import FeeManager from './components/FeeManager';
+import AutoManager from './components/AutoManager';
 import { CssBaseline } from '@mui/material';
 
 const App = () => {
@@ -19,6 +20,7 @@ const App = () => {
         <Route path="/classes" element={<ClassManager />} />
         <Route path="/sections" element={<SectionManager />} />
         <Route path="/fees" element={<FeeManager />} />
+        <Route path="/auto" element={<AutoManager />} />
       </Routes>
     </Router>
   );
