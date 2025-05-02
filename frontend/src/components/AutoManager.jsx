@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, Box
+  Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent,
+  IconButton, Tooltip, Chip
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
+import GroupIcon from '@mui/icons-material/Group';
+import ClassIcon from '@mui/icons-material/Class';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 
 const AutoManager = () => {
   const [autos, setAutos] = useState([]);
@@ -22,11 +27,24 @@ const AutoManager = () => {
   });
   const [viewStudentsModalOpen, setViewStudentsModalOpen] = useState(false);
   const [selectedAutoStudents, setSelectedAutoStudents] = useState([]);
+  const [stats, setStats] = useState({
+    totalAutos: 0,
+    totalStudents: 0,
+    totalFees: 0,
+    classDistribution: {},
+    sectionDistribution: {}
+  });
 
   useEffect(() => {
     fetchAutos();
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    if (autos.length > 0 && students.length > 0) {
+      calculateStats();
+    }
+  }, [autos, students]);
 
   const fetchAutos = async () => {
     try {
@@ -45,6 +63,47 @@ const AutoManager = () => {
       const response = await axios.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
+
+  const calculateStats = () => {
+    try {
+      const classMap = {};
+      const sectionMap = {};
+      let totalStudents = 0;
+      let totalFees = 0;
+
+      autos.forEach(auto => {
+        const autoStudents = auto.students || [];
+        totalStudents += autoStudents.length;
+        
+        autoStudents.forEach(studentId => {
+          const student = students.find(s => s.id === studentId);
+          if (student) {
+            // Add to class distribution
+            const className = student.class_name || 'Unassigned';
+            classMap[className] = (classMap[className] || 0) + 1;
+            
+            // Add to section distribution
+            const sectionName = student.section_name || 'Unassigned';
+            sectionMap[sectionName] = (sectionMap[sectionName] || 0) + 1;
+            
+            // Add fees
+            totalFees += student.auto_fees || 0;
+          }
+        });
+      });
+
+      setStats({
+        totalAutos: autos.length,
+        totalStudents,
+        totalFees,
+        classDistribution: classMap,
+        sectionDistribution: sectionMap
+      });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
       handleApiError(error, setAlert);
     }
   };
@@ -209,7 +268,89 @@ const AutoManager = () => {
   );
 
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'primary.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <DirectionsBusIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Autos</Typography>
+              </Box>
+              <Typography variant="h3">{stats.totalAutos}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'success.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <GroupIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Students</Typography>
+              </Box>
+              <Typography variant="h3">{stats.totalStudents}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'info.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <ClassIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Classes Covered</Typography>
+              </Box>
+              <Typography variant="h3">{Object.keys(stats.classDistribution).length}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'warning.light', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <AccountBalanceIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Total Fees</Typography>
+              </Box>
+              <Typography variant="h3">₹{stats.totalFees.toLocaleString()}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Distribution Details */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Class Distribution</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {Object.entries(stats.classDistribution).map(([className, count]) => (
+                <Chip
+                  key={className}
+                  label={`${className}: ${count} students`}
+                  color="primary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Section Distribution</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {Object.entries(stats.sectionDistribution).map(([sectionName, count]) => (
+                <Chip
+                  key={sectionName}
+                  label={`${sectionName}: ${count} students`}
+                  color="secondary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Grid item xs>
           <Typography variant="h4">Auto Management</Typography>
