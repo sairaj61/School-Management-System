@@ -317,40 +317,6 @@ const AutoManager = () => {
         </Grid>
       </Grid>
 
-      {/* Distribution Details */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Class Distribution</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Object.entries(stats.classDistribution).map(([className, count]) => (
-                <Chip
-                  key={className}
-                  label={`${className}: ${count} students`}
-                  color="primary"
-                  variant="outlined"
-                />
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Section Distribution</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Object.entries(stats.sectionDistribution).map(([sectionName, count]) => (
-                <Chip
-                  key={sectionName}
-                  label={`${sectionName}: ${count} students`}
-                  color="secondary"
-                  variant="outlined"
-                />
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-
       <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Grid item xs>
           <Typography variant="h4">Auto Management</Typography>
