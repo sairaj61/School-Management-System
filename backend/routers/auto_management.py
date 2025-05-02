@@ -10,7 +10,7 @@ from uuid import UUID
 from typing import List
 
 router = APIRouter(
-    prefix="/auto-management",
+    prefix="/autos",
     tags=["Auto Management"]
 )
 
