@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
@@ -34,12 +34,30 @@ const StudentManager = () => {
     academic_year_id: ''
   });
 
+  // Add new state for statistics
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalClasses: 0,
+    totalSections: 0,
+    feeDefaulters: 0
+  });
+
   useEffect(() => {
     fetchStudents();
     fetchClasses();
     fetchAcademicYears();
     fetchAllSections();
   }, []);
+
+  // Update stats when data changes
+  useEffect(() => {
+    setStats({
+      totalStudents: students.length,
+      totalClasses: classes.length,
+      totalSections: sections.length,
+      feeDefaulters: students.filter(s => s.pending_fees > 0).length
+    });
+  }, [students, classes, sections]);
 
   const fetchStudents = async () => {
     try {
@@ -258,13 +276,12 @@ const StudentManager = () => {
       headerName: 'Actions',
       width: 200,
       renderCell: (params) => (
-        <div>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="contained"
             color="primary"
             size="small"
             onClick={() => handleModalOpen(params.row)}
-            sx={{ mr: 1 }}
           >
             Edit
           </Button>
@@ -276,46 +293,107 @@ const StudentManager = () => {
           >
             Delete
           </Button>
-        </div>
+        </Box>
       ),
     },
   ];
 
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-        <Grid item xs>
-          <Typography variant="h4">Students</Typography>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Total Students
+              </Typography>
+              <Typography variant="h3">
+                {stats.totalStudents}
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid item>
-          <TextField
-            size="small"
-            placeholder="Search students..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'success.light', color: 'success.contrastText' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Active Classes
+              </Typography>
+              <Typography variant="h3">
+                {stats.totalClasses}
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid item>
-          <Button
-            variant="contained"
-            onClick={() => handleModalOpen()}
-          >
-            Add Student
-          </Button>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'info.light', color: 'info.contrastText' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Total Sections
+              </Typography>
+              <Typography variant="h3">
+                {stats.totalSections}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Fee Defaulters
+              </Typography>
+              <Typography variant="h3">
+                {stats.feeDefaulters}
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
-      <div style={{ height: 400, width: '100%' }}>
+      {/* Actions Bar */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs>
+            <Typography variant="h5">Students</Typography>
+          </Grid>
+          <Grid item>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                size="small"
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={() => handleModalOpen()}
+              >
+                Add Student
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Data Grid */}
+      <Paper sx={{ height: 500, width: '100%' }}>
         <DataGrid
           rows={filteredStudents}
           columns={columns}
-          pageSize={5}
-          rowsPerPageOptions={[5]}
+          pageSize={8}
+          rowsPerPageOptions={[8, 16, 24]}
           disableSelectionOnClick
           loading={loading}
           getRowId={(row) => row.id}
+          sx={{
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: 'action.hover'
+            }
+          }}
         />
-      </div>
+      </Paper>
 
       <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
         <DialogTitle>
