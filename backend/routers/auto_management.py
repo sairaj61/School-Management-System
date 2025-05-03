@@ -8,6 +8,8 @@ from schemas import (
 from database import get_db
 from uuid import UUID
 from typing import List
+from auth.auth import current_active_user
+from models.users import User
 
 router = APIRouter(
     prefix="/autos",
@@ -15,7 +17,7 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=list[AutoManagementResponse])
-def get_autos(db=Depends(get_db)):
+async def get_autos(user: User = Depends(current_active_user), db=Depends(get_db)):
     service = AutoManagementService(db)
     return service.get_all_autos()
 

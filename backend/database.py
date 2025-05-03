@@ -1,8 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from fastapi import Depends
+from typing import AsyncGenerator
+from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./school.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
