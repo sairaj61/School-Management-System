@@ -11,7 +11,7 @@ engine = create_async_engine(
     echo=True,  # Set to False in production
 )
 
-# Create sessionmaker using AsyncSession
+# Create session maker using AsyncSession
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     expire_on_commit=False,
