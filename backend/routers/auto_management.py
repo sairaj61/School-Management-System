@@ -1,15 +1,16 @@
+from typing import List
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Body
-from services.auto_management_service import AutoManagementService
+
+from auth.auth_service import current_active_user
+from database import get_db
+from models import User
 from schemas import (
     AutoManagementCreate, AutoManagementUpdate, AutoManagementResponse,
-    AutoStudentMappingCreate, AutoStudentMappingResponse, AutoWithStudentsResponse,
-    AutoStudentBulkAssignRequest
+    AutoStudentMappingCreate, AutoStudentMappingResponse, AutoWithStudentsResponse
 )
-from database import get_db
-from uuid import UUID
-from typing import List
-from auth.auth import current_active_user
-from models import User
+from services.auto_management_service import AutoManagementService
 
 router = APIRouter(
     prefix="/autos",

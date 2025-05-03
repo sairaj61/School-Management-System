@@ -1,23 +1,15 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any
-from datetime import datetime
 import re
+from datetime import datetime
 from decimal import Decimal
-from uuid import UUID
-from models import Month
+from typing import List
 from typing import Optional
-from fastapi import Depends, Request
-from fastapi_users import BaseUserManager, FastAPIUsers
-from fastapi_users.authentication import (
-    AuthenticationBackend,
-    BearerTransport,
-    JWTStrategy,
-)
+from uuid import UUID
+
 from fastapi_users import schemas
-from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import get_db
-from models import User
+from pydantic import BaseModel, Field, validator
+
+from models import Month
+
 
 # Base Models
 class AcademicYearBase(BaseModel):
@@ -36,11 +28,14 @@ class AcademicYearBase(BaseModel):
             return v
         raise ValueError("Year must be in YYYY or YYYY-YYYY format")
 
+
 class AcademicYearCreate(AcademicYearBase):
     pass
 
+
 class AcademicYearUpdate(AcademicYearBase):
     pass
+
 
 class AcademicYear(AcademicYearBase):
     id: UUID
@@ -48,6 +43,7 @@ class AcademicYear(AcademicYearBase):
 
     class Config:
         orm_mode = True
+
 
 class StudentBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -62,10 +58,12 @@ class StudentBase(BaseModel):
     auto_fees: Decimal = Field(..., ge=0)
     day_boarding_fees: Decimal = Field(..., ge=0)
 
+
 class StudentCreate(StudentBase):
     class_id: UUID
     section_id: UUID
     academic_year_id: UUID
+
 
 class StudentUpdate(BaseModel):
     name: Optional[str] = None
@@ -83,6 +81,7 @@ class StudentUpdate(BaseModel):
     section_id: Optional[UUID] = None
     academic_year_id: Optional[UUID] = None
 
+
 class StudentResponse(StudentBase):
     id: UUID
     class_id: UUID
@@ -92,15 +91,19 @@ class StudentResponse(StudentBase):
     class Config:
         orm_mode = True
 
+
 class ClassBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
+
 
 class ClassCreate(ClassBase):
     academic_year_id: UUID
 
+
 class ClassUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=50)
     academic_year_id: Optional[UUID] = None
+
 
 class ClassResponse(ClassBase):
     id: UUID
@@ -109,15 +112,19 @@ class ClassResponse(ClassBase):
     class Config:
         orm_mode = True
 
+
 class SectionBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
+
 
 class SectionCreate(SectionBase):
     class_id: UUID
 
+
 class SectionUpdate(BaseModel):
     name: Optional[str] = None
     class_id: Optional[UUID] = None
+
 
 class SectionResponse(SectionBase):
     id: UUID
@@ -126,14 +133,17 @@ class SectionResponse(SectionBase):
     class Config:
         orm_mode = True
 
+
 class FeePaymentBase(BaseModel):
     month: Month
     tuition_fees: Decimal = Field(..., ge=0)
     auto_fees: Decimal = Field(..., ge=0)
     day_boarding_fees: Decimal = Field(..., ge=0)
 
+
 class FeePaymentCreate(FeePaymentBase):
     student_id: UUID
+
 
 class FeePaymentUpdate(BaseModel):
     month: Optional[Month] = None
@@ -141,6 +151,7 @@ class FeePaymentUpdate(BaseModel):
     auto_fees: Optional[Decimal] = None
     day_boarding_fees: Optional[Decimal] = None
     student_id: Optional[UUID] = None
+
 
 class FeePaymentResponse(FeePaymentBase):
     id: UUID
@@ -151,12 +162,14 @@ class FeePaymentResponse(FeePaymentBase):
     class Config:
         orm_mode = True
 
+
 class StudentPaymentInfo(BaseModel):
     id: UUID
     name: str
     total_paid: Decimal
     total_balance: Decimal
     payment_status: str
+
 
 class DashboardResponse(BaseModel):
     total_students: int
@@ -167,14 +180,18 @@ class DashboardResponse(BaseModel):
     class Config:
         orm_mode = True
 
+
 class AutoManagementBase(BaseModel):
     name: str
+
 
 class AutoManagementCreate(AutoManagementBase):
     pass
 
+
 class AutoManagementUpdate(AutoManagementBase):
     name: Optional[str] = None
+
 
 class AutoManagementResponse(AutoManagementBase):
     id: UUID
@@ -182,16 +199,20 @@ class AutoManagementResponse(AutoManagementBase):
     class Config:
         orm_mode = True
 
+
 class AutoStudentMappingBase(BaseModel):
     auto_id: UUID
     student_id: UUID
 
+
 class AutoStudentMappingCreate(AutoStudentMappingBase):
     pass
+
 
 class AutoStudentMappingUpdate(AutoStudentMappingBase):
     auto_id: Optional[UUID] = None
     student_id: Optional[UUID] = None
+
 
 class AutoStudentMappingResponse(AutoStudentMappingBase):
     id: UUID
@@ -199,9 +220,11 @@ class AutoStudentMappingResponse(AutoStudentMappingBase):
     class Config:
         orm_mode = True
 
+
 class StudentDetailResponse(BaseModel):
     id: UUID
     auto_fees: float
+
 
 class StudentDetailInAutoResponse(BaseModel):
     id: UUID
@@ -216,6 +239,7 @@ class StudentDetailInAutoResponse(BaseModel):
     class Config:
         orm_mode = True
 
+
 class AutoWithStudentsResponse(BaseModel):
     id: UUID
     name: str
@@ -226,24 +250,29 @@ class AutoWithStudentsResponse(BaseModel):
     class Config:
         orm_mode = True
 
+
 class AutoStudentBulkAssignRequest(BaseModel):
     auto_id: UUID
     student_ids: List[UUID]
+
 
 class AutoWithStudentsListResponse(BaseModel):
     autos: List[AutoWithStudentsResponse]
 
     class Config:
-        orm_mode = True 
+        orm_mode = True
+
 
 class UserRead(schemas.BaseUser[int]):
     first_name: Optional[str]
     last_name: Optional[str]
 
+
 class UserCreate(schemas.BaseUserCreate):
     first_name: Optional[str]
     last_name: Optional[str]
 
+
 class UserUpdate(schemas.BaseUserUpdate):
     first_name: Optional[str]
-    last_name: Optional[str] 
+    last_name: Optional[str]
