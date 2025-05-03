@@ -1,5 +1,3 @@
-import pprint
-
 from fastapi import APIRouter, Depends
 
 from auth.auth_model import UserRead, UserCreate, UserUpdate, User
@@ -38,4 +36,4 @@ router.include_router(
 # Protected Admin Route
 @router.get("/admin-only")
 async def admin_only(user: User = Depends(current_active_user)):
-    return {"message": f"Welcome, {user.username}!"}
+    return {"message": f"Welcome, {user.email}!"}
