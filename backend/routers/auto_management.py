@@ -3,9 +3,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Body
 
+from auth.auth_model import User
 from auth.auth_service import current_active_user
 from database import get_db
-from models import User
+
 from schemas import (
     AutoManagementCreate, AutoManagementUpdate, AutoManagementResponse,
     AutoStudentMappingCreate, AutoStudentMappingResponse, AutoWithStudentsResponse

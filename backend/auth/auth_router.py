@@ -1,7 +1,9 @@
-from fastapi import APIRouter
+import pprint
 
-from auth.auth_service import fastapi_users, auth_backend
-from schemas import UserRead, UserCreate, UserUpdate
+from fastapi import APIRouter, Depends
+
+from auth.auth_model import UserRead, UserCreate, UserUpdate, User
+from auth.auth_service import fastapi_users, auth_backend, current_active_user
 
 router = APIRouter()
 
@@ -33,9 +35,7 @@ router.include_router(
 )
 
 
-# # Protected Admin Route
-# @router.get("/admin-only")
-# async def admin_only(user: User = Depends(current_active_admin_user)):
-#     if user.role != Role.ADMIN:
-#         raise HTTPException(status_code=403, detail="Not authorized: Admin access required")
-#     return {"message": "Welcome, admin!"}
+# Protected Admin Route
+@router.get("/admin-only")
+async def admin_only(user: User = Depends(current_active_user)):
+    return {"message": f"Welcome, {user.username}!"}

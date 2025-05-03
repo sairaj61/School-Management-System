@@ -16,8 +16,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database
-init_db()
+
+@app.on_event("startup")
+async def on_startup():
+    await init_db()
+
 
 # Include routers
 app.include_router(auth_router.router, prefix="/auth")

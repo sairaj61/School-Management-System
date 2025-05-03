@@ -5,7 +5,7 @@ from typing import List
 from typing import Optional
 from uuid import UUID
 
-from fastapi_users import schemas
+
 from pydantic import BaseModel, Field, validator
 
 from models import Month
@@ -263,16 +263,4 @@ class AutoWithStudentsListResponse(BaseModel):
         orm_mode = True
 
 
-class UserRead(schemas.BaseUser[UUID]):  # ✅ Change int to UUID
-    first_name: Optional[str]
-    last_name: Optional[str]
 
-
-class UserCreate(schemas.BaseUserCreate):
-    first_name: Optional[str]
-    last_name: Optional[str]
-
-
-class UserUpdate(schemas.BaseUserUpdate):
-    first_name: Optional[str]
-    last_name: Optional[str]

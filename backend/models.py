@@ -1,14 +1,13 @@
-from sqlalchemy import Column, String, ForeignKey, Enum, DECIMAL, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-from database import Base
 import enum
 from datetime import datetime
-from utils.uuid_generator import generate_time_based_uuid
-from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
+
 from sqlalchemy import Column, String, Boolean
+from sqlalchemy import ForeignKey, Enum, DECIMAL, DateTime
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+
 from database import Base
-from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
+from utils.uuid_generator import generate_time_based_uuid
 
 
 class Month(str, enum.Enum):
@@ -118,11 +117,4 @@ class AutoStudentMapping(Base):
     student = relationship("Student", backref="auto_mappings")
 
 
-class User(SQLAlchemyBaseUserTable[int], Base):
-    __tablename__ = "users"  # Ensure the table name is defined
-    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)  # Define the primary key
-    first_name = Column(String(length=50), nullable=True)
-    last_name = Column(String(length=50), nullable=True)
-    is_active = Column(Boolean, default=True, nullable=False)
-    is_superuser = Column(Boolean, default=False, nullable=False)
-    is_verified = Column(Boolean, default=False, nullable=False)
+

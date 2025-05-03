@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from models import User
+from auth.auth_model import User
+from auth.auth_service import current_active_user
 from services.academic_year_service import AcademicYearService
 from schemas import AcademicYearCreate, AcademicYearUpdate, AcademicYear
 from database import get_db
@@ -10,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[AcademicYear])
-async def get_academic_years(db=Depends(get_db),current_user: User = Depends(current_active_user)):
+async def get_academic_years(db=Depends(get_db), current_user: User = Depends(current_active_user)):
     service = AcademicYearService(db)
     return await service.get_all_academic_years()
 

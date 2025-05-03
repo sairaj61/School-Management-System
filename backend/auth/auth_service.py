@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers
@@ -10,13 +11,13 @@ from fastapi_users.authentication import (
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.auth_model import User
 from database import get_db
-from models import User
 
-SECRET = "YOUR-SECRET-KEY"  # Store this securely in environment variables
+SECRET = "YOUR-SECRET-KEY"
 
 
-class UserManager(BaseUserManager[User, int]):
+class UserManager(BaseUserManager[User, UUID]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 
@@ -56,7 +57,11 @@ async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
 
 
-fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend])
+# Create the instance
+fastapi_users = FastAPIUsers[User, UUID](
+    get_user_manager,  # async dependency function
+    [auth_backend],
+)
 
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
