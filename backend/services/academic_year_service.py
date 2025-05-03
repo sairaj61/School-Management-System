@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from repositories.academic_year_repository import AcademicYearRepository
 from schemas import AcademicYearCreate, AcademicYearUpdate
 
+
 class AcademicYearService:
     def __init__(self, db):
         self.academic_year_repo = AcademicYearRepository(db)
@@ -49,4 +50,4 @@ class AcademicYearService:
 
     def deactivate_academic_year(self, year_id: int):
         """Deactivate an academic year"""
-        return self.academic_year_repo.deactivate_year(year_id) 
+        return self.academic_year_repo.deactivate_year(year_id)

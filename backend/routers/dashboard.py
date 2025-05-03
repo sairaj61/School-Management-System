@@ -4,6 +4,7 @@ from database import get_db
 
 router = APIRouter()
 
+
 @router.get("/")
 def get_dashboard(db=Depends(get_db)):
     service = DashboardService(db)

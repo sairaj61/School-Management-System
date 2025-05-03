@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 from models import AutoManagement, AutoStudentMapping
 from schemas import (
-    AutoManagementCreate, 
+    AutoManagementCreate,
     AutoManagementUpdate,
     AutoStudentMappingCreate
 )
 from fastapi import HTTPException
 from uuid import UUID
+
 
 class AutoManagementRepository:
     def __init__(self, db: Session):
@@ -29,10 +30,10 @@ class AutoManagementRepository:
         db_auto = self.get_by_id(auto_id)
         if not db_auto:
             return None
-        
+
         for key, value in auto.dict(exclude_unset=True).items():
             setattr(db_auto, key, value)
-        
+
         self.db.commit()
         self.db.refresh(db_auto)
         return db_auto
@@ -52,21 +53,22 @@ class AutoManagementRepository:
             self.db.query(AutoStudentMapping).filter(
                 AutoStudentMapping.auto_id == auto_id
             ).delete(synchronize_session=False)
-            
+
             # Then delete the auto
             auto = self.db.query(AutoManagement).filter(
                 AutoManagement.id == auto_id
             ).first()
-            
+
             if not auto:
                 raise HTTPException(status_code=404, detail="Auto not found")
-                
+
             self.db.delete(auto)
             self.db.commit()
             return {"message": "Auto deleted successfully"}
         except Exception as e:
             self.db.rollback()
             raise HTTPException(status_code=500, detail=str(e))
+
 
 class AutoStudentMappingRepository:
     def __init__(self, db: Session):
@@ -107,4 +109,4 @@ class AutoStudentMappingRepository:
         mappings = self.db.query(AutoStudentMapping).filter(
             AutoStudentMapping.auto_id == auto_id
         ).all()
-        return [mapping.student_id for mapping in mappings] 
+        return [mapping.student_id for mapping in mappings]

@@ -1,7 +1,9 @@
 from fastapi import HTTPException
-from repositories.section_repository import SectionRepository
+
 from repositories.class_repository import ClassRepository
-from schemas import SectionCreate, SectionUpdate, SectionResponse
+from repositories.section_repository import SectionRepository
+from schemas import SectionCreate, SectionUpdate
+
 
 class SectionService:
     def __init__(self, db):

@@ -1,7 +1,9 @@
 from fastapi import HTTPException
+
 from repositories.fee_payment_repository import FeePaymentRepository
 from repositories.student_repository import StudentRepository
-from schemas import FeePaymentCreate, FeePaymentUpdate, FeePaymentResponse
+from schemas import FeePaymentCreate, FeePaymentUpdate
+
 
 class FeePaymentService:
     def __init__(self, db):

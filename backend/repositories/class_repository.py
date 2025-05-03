@@ -5,6 +5,7 @@ from models import Class
 from schemas import ClassCreate, ClassUpdate
 from uuid import UUID
 
+
 class ClassRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -53,14 +54,14 @@ class ClassRepository:
             # Use new values if provided, otherwise use existing values
             check_name = class_.name if class_.name else db_class.name
             check_year_id = class_.academic_year_id if class_.academic_year_id else db_class.academic_year_id
-            
+
             # Check for existing class with same name in same academic year (excluding current class)
             existing_class = self.db.query(Class).filter(
                 Class.name == check_name,
                 Class.academic_year_id == check_year_id,
                 Class.id != class_id  # Exclude current class from check
             ).first()
-            
+
             if existing_class:
                 raise HTTPException(
                     status_code=400,
@@ -71,7 +72,7 @@ class ClassRepository:
             update_data = class_.dict(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(db_class, key, value)
-            
+
             self.db.commit()
             self.db.refresh(db_class)
             return db_class

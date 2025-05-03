@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
+
 class FeePaymentRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -19,11 +20,11 @@ class FeePaymentRepository:
         try:
             # Calculate total amount
             total_amount = (
-                fee_payment.tuition_fees +
-                fee_payment.auto_fees +
-                fee_payment.day_boarding_fees
+                    fee_payment.tuition_fees +
+                    fee_payment.auto_fees +
+                    fee_payment.day_boarding_fees
             )
-            
+
             db_fee_payment = FeePayment(
                 **fee_payment.dict(),
                 total_amount=total_amount,
@@ -47,19 +48,19 @@ class FeePaymentRepository:
 
         try:
             update_data = fee_payment.dict(exclude_unset=True)
-            
+
             # If any fee is updated, recalculate total
             if any(key in update_data for key in ['tuition_fees', 'auto_fees', 'day_boarding_fees']):
                 total_amount = (
-                    (update_data.get('tuition_fees') or db_fee_payment.tuition_fees) +
-                    (update_data.get('auto_fees') or db_fee_payment.auto_fees) +
-                    (update_data.get('day_boarding_fees') or db_fee_payment.day_boarding_fees)
+                        (update_data.get('tuition_fees') or db_fee_payment.tuition_fees) +
+                        (update_data.get('auto_fees') or db_fee_payment.auto_fees) +
+                        (update_data.get('day_boarding_fees') or db_fee_payment.day_boarding_fees)
                 )
                 update_data['total_amount'] = total_amount
 
             for key, value in update_data.items():
                 setattr(db_fee_payment, key, value)
-            
+
             self.db.commit()
             self.db.refresh(db_fee_payment)
             return db_fee_payment

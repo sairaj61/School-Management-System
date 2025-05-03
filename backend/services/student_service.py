@@ -1,10 +1,13 @@
+from decimal import Decimal
+from uuid import UUID
+
 from fastapi import HTTPException
-from repositories.student_repository import StudentRepository
+
 from repositories.class_repository import ClassRepository
 from repositories.section_repository import SectionRepository
-from schemas import StudentCreate, StudentUpdate, StudentResponse
-from uuid import UUID
-from decimal import Decimal
+from repositories.student_repository import StudentRepository
+from schemas import StudentCreate, StudentUpdate
+
 
 class StudentService:
     def __init__(self, db):

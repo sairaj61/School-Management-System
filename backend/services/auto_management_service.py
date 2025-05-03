@@ -7,6 +7,7 @@ from schemas import AutoManagementCreate, AutoManagementUpdate, AutoStudentMappi
 from typing import List
 from uuid import UUID
 
+
 class AutoManagementService:
     def __init__(self, db):
         self.auto_repo = AutoManagementRepository(db)
@@ -64,7 +65,7 @@ class AutoManagementService:
         for student_id in student_ids:
             if not self.student_repo.get_by_id(student_id):
                 raise HTTPException(
-                    status_code=404, 
+                    status_code=404,
                     detail=f"Student with id {student_id} not found"
                 )
 
@@ -90,18 +91,18 @@ class AutoManagementService:
         """Get all autos with their mapped students and fees"""
         autos = self.auto_repo.get_all()
         result = []
-        
+
         for auto in autos:
             mappings = self.mapping_repo.get_by_auto_id(auto.id)
             total_fees = 0
             student_details = []
-            
+
             for mapping in mappings:
                 student = self.student_repo.get_by_id(mapping.student_id)
                 if student:
                     class_info = self.class_repo.get_by_id(student.class_id) if student.class_id else None
                     section_info = self.section_repo.get_by_id(student.section_id) if student.section_id else None
-                    
+
                     student_details.append({
                         "id": student.id,
                         "name": student.name,
@@ -113,7 +114,7 @@ class AutoManagementService:
                         "auto_fees": float(student.auto_fees or 0)
                     })
                     total_fees += student.auto_fees or 0
-            
+
             result.append({
                 "id": auto.id,
                 "name": auto.name,
@@ -121,5 +122,5 @@ class AutoManagementService:
                 "total_fees": float(total_fees),
                 "student_details": student_details
             })
-        
-        return result 
+
+        return result

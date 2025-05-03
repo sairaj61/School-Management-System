@@ -1,8 +1,11 @@
-from fastapi import HTTPException
-from repositories.class_repository import ClassRepository
-from repositories.academic_year_repository import AcademicYearRepository
-from schemas import ClassCreate, ClassUpdate, ClassResponse
 from uuid import UUID
+
+from fastapi import HTTPException
+
+from repositories.academic_year_repository import AcademicYearRepository
+from repositories.class_repository import ClassRepository
+from schemas import ClassCreate, ClassUpdate
+
 
 class ClassService:
     def __init__(self, db):

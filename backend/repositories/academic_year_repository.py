@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from models import AcademicYear
 from schemas import AcademicYearCreate, AcademicYearUpdate
 
+
 class AcademicYearRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -30,7 +31,7 @@ class AcademicYearRepository:
             db_academic_year = AcademicYear(**academic_year.dict(), is_active=True)
             # Deactivate other years since this is a new year
             self.deactivate_all_years()
-            
+
             self.db.add(db_academic_year)
             self.db.commit()
             self.db.refresh(db_academic_year)
@@ -54,7 +55,7 @@ class AcademicYearRepository:
                 AcademicYear.year == academic_year.year,
                 AcademicYear.id != year_id
             ).first()
-            
+
             if existing_year:
                 raise HTTPException(
                     status_code=400,
@@ -104,11 +105,11 @@ class AcademicYearRepository:
         db_academic_year = self.get_by_id(year_id)
         if not db_academic_year:
             raise HTTPException(status_code=404, detail="Academic year not found")
-        
+
         if not db_academic_year.is_active:
             raise HTTPException(status_code=400, detail="Academic year is already inactive")
 
         db_academic_year.is_active = False
         self.db.commit()
         self.db.refresh(db_academic_year)
-        return db_academic_year 
+        return db_academic_year

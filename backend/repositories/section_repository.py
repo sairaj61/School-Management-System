@@ -4,6 +4,7 @@ from schemas import SectionCreate, SectionUpdate
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 
+
 class SectionRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -54,14 +55,14 @@ class SectionRepository:
         if (section.name or section.class_id):
             check_name = section.name if section.name else db_section.name
             check_class = section.class_id if section.class_id else db_section.class_id
-            
+
             # Check for existing section with same name in same class (excluding current section)
             existing_section = self.db.query(Section).filter(
                 Section.name == check_name,
                 Section.class_id == check_class,
                 Section.id != section_id
             ).first()
-            
+
             if existing_section:
                 raise HTTPException(
                     status_code=400,

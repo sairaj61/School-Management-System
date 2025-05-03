@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 
+
 class StudentRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -56,7 +57,7 @@ class StudentRepository:
         if student.roll_number:
             # If class is also being updated, use new class_id, otherwise use existing
             check_class = student.class_id if student.class_id else db_student.class_id
-            
+
             # Check for duplicates only if roll number is different
             if student.roll_number != db_student.roll_number:
                 existing_student = self.db.query(Student).filter(
@@ -64,7 +65,7 @@ class StudentRepository:
                     Student.class_id == check_class,
                     Student.id != student_id
                 ).first()
-                
+
                 if existing_student:
                     raise HTTPException(
                         status_code=400,
@@ -75,7 +76,7 @@ class StudentRepository:
             update_data = student.dict(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(db_student, key, value)
-            
+
             self.db.commit()
             self.db.refresh(db_student)
             return db_student

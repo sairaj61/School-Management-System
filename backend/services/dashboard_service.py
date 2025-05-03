@@ -1,7 +1,7 @@
-from fastapi import HTTPException
-from repositories.student_repository import StudentRepository
 from repositories.fee_payment_repository import FeePaymentRepository
+from repositories.student_repository import StudentRepository
 from schemas import DashboardResponse, StudentPaymentInfo
+
 
 class DashboardService:
     def __init__(self, db):
