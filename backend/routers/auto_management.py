@@ -9,7 +9,7 @@ from database import get_db
 from uuid import UUID
 from typing import List
 from auth.auth import current_active_user
-from models.users import User
+from models import User
 
 router = APIRouter(
     prefix="/autos",

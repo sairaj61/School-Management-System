@@ -5,6 +5,19 @@ import re
 from decimal import Decimal
 from uuid import UUID
 from models import Month
+from typing import Optional
+from fastapi import Depends, Request
+from fastapi_users import BaseUserManager, FastAPIUsers
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
+from fastapi_users import schemas
+from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import get_db
+from models import User
 
 # Base Models
 class AcademicYearBase(BaseModel):
@@ -222,3 +235,15 @@ class AutoWithStudentsListResponse(BaseModel):
 
     class Config:
         orm_mode = True 
+
+class UserRead(schemas.BaseUser[int]):
+    first_name: Optional[str]
+    last_name: Optional[str]
+
+class UserCreate(schemas.BaseUserCreate):
+    first_name: Optional[str]
+    last_name: Optional[str]
+
+class UserUpdate(schemas.BaseUserUpdate):
+    first_name: Optional[str]
+    last_name: Optional[str] 

@@ -9,8 +9,8 @@ from fastapi_users.authentication import (
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from models.users import User
-from schemas.users import UserCreate, UserUpdate
+from models import User
+from schemas import UserCreate, UserUpdate
 
 SECRET = "YOUR-SECRET-KEY"  # Store this securely in environment variables
 

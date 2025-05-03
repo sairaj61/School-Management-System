@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
 from routers import dashboard, students, classes, sections, fee_payments, academic_years, auto_management
 from auth.auth import auth_backend, fastapi_users, current_active_user
-from schemas.users import UserRead, UserCreate, UserUpdate
-from models.users import User
+from schemas import UserRead, UserCreate, UserUpdate
+from models import User
 
 app = FastAPI(title="School Management System API")
 
