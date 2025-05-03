@@ -10,6 +10,7 @@ from sqlalchemy import Column, String, Boolean
 from database import Base
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 
+
 class Month(str, enum.Enum):
     JAN = "JAN"
     FEB = "FEB"
@@ -24,15 +25,17 @@ class Month(str, enum.Enum):
     NOV = "NOV"
     DEC = "DEC"
 
+
 class AcademicYear(Base):
     __tablename__ = "academic_years"
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     year = Column(String, unique=True, index=True)
     is_active = Column(Boolean, default=False)
-    
+
     # Relationships
     students = relationship("Student", back_populates="academic_year")
     classes = relationship("Class", back_populates="academic_year")
+
 
 class Student(Base):
     __tablename__ = "students"
@@ -58,16 +61,18 @@ class Student(Base):
     fee_payments = relationship("FeePayment", back_populates="student")
     academic_year = relationship("AcademicYear", back_populates="students")
 
+
 class Class(Base):
     __tablename__ = "classes"
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     name = Column(String, index=True)
     academic_year_id = Column(UUID(as_uuid=True), ForeignKey("academic_years.id"))
-    
+
     # Relationships
     academic_year = relationship("AcademicYear", back_populates="classes")
     students = relationship("Student", back_populates="class_")
     sections = relationship("Section", back_populates="class_")
+
 
 class Section(Base):
     __tablename__ = "sections"
@@ -76,6 +81,7 @@ class Section(Base):
     class_id = Column(UUID(as_uuid=True), ForeignKey("classes.id"))
     class_ = relationship("Class", back_populates="sections")
     students = relationship("Student", back_populates="section")
+
 
 class FeePayment(Base):
     __tablename__ = "fee_payments"
@@ -87,27 +93,30 @@ class FeePayment(Base):
     day_boarding_fees = Column(DECIMAL(10, 2))
     total_amount = Column(DECIMAL(10, 2))
     transaction_date = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     student = relationship("Student", back_populates="fee_payments")
+
 
 class AutoManagement(Base):
     __tablename__ = "auto_management"
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     name = Column(String, nullable=False)
-    
+
     # Relationship
     students = relationship("AutoStudentMapping", back_populates="auto")
+
 
 class AutoStudentMapping(Base):
     __tablename__ = "auto_student_mapping"
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     auto_id = Column(UUID(as_uuid=True), ForeignKey("auto_management.id"), nullable=False)
     student_id = Column(UUID(as_uuid=True), ForeignKey("students.id"), nullable=False)
-    
+
     # Relationships
     auto = relationship("AutoManagement", back_populates="students")
     student = relationship("Student", backref="auto_mappings")
+
 
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "users"  # Ensure the table name is defined
