@@ -7,14 +7,16 @@ from models import FeePayment
 from schemas import FeePaymentCreate, FeePaymentUpdate
 from fastapi import HTTPException
 from datetime import datetime
-
+from sqlalchemy.orm import joinedload
 
 class FeePaymentRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_all(self):
-        result = await self.db.execute(select(FeePayment))
+        result = await self.db.execute(
+            select(FeePayment).options(joinedload(FeePayment.student))
+        )
         return result.scalars().all()
 
     async def get_by_id(self, payment_id: UUID):

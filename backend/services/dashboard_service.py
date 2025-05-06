@@ -8,24 +8,32 @@ class DashboardService:
         self.student_repo = StudentRepository(db)
         self.payment_repo = FeePaymentRepository(db)
 
-    def get_dashboard(self) -> DashboardResponse:
-        total_students = len(self.student_repo.get_all())
-        fee_payments = self.payment_repo.get_all()
-        
+    # filepath: d:\learning\School-Management-System\backend\services\dashboard_service.py
+    async def get_dashboard(self) -> DashboardResponse:
+        # Fetch total students
+        total_students = len(await self.student_repo.get_all())
+
+        # Fetch all fee payments
+        fee_payments = await self.payment_repo.get_all()
+
+        # Calculate total payments and dues
         total_payments = sum(payment.total_amount for payment in fee_payments)
         total_dues = sum(payment.total_amount for payment in fee_payments)
-        
-        students_with_payments = [
-            StudentPaymentInfo(
-                id=payment.student.id,
-                name=payment.student.name,
-                total_paid=payment.total_amount,
-                total_balance=payment.total_amount,
-                payment_status="Paid" if payment.total_amount <= 0 else "Pending"
-            )
-            for payment in fee_payments
-        ]
-        
+
+        # Prepare student payment information
+        students_with_payments = []
+        for payment in fee_payments:
+            if payment.student:  # Ensure student is loaded
+                students_with_payments.append(
+                    StudentPaymentInfo(
+                        id=payment.student.id,
+                        name=payment.student.name,
+                        total_paid=payment.total_amount,
+                        total_balance=payment.total_amount,
+                        payment_status="Paid" if payment.total_amount <= 0 else "Pending"
+                    )
+                )
+
         return DashboardResponse(
             total_students=total_students,
             total_payments=total_payments,

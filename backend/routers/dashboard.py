@@ -6,6 +6,6 @@ router = APIRouter()
 
 
 @router.get("/")
-def get_dashboard(db=Depends(get_db)):
+async def get_dashboard(db=Depends(get_db)):
     service = DashboardService(db)
-    return service.get_dashboard()
+    return await service.get_dashboard()
