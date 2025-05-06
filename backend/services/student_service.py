@@ -15,16 +15,16 @@ class StudentService:
         self.class_repo = ClassRepository(db)
         self.section_repo = SectionRepository(db)
 
-    def get_all_students(self):
-        return self.student_repo.get_all()
+    async def get_all_students(self):
+        return await self.student_repo.get_all()
 
-    def get_student(self, student_id: UUID):
-        student = self.student_repo.get_by_id(student_id)
+    async def get_student(self, student_id: UUID):
+        student = await self.student_repo.get_by_id(student_id)
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
         return student
 
-    def create_student(self, student: StudentCreate):
+    async def create_student(self, student: StudentCreate):
         # Validate fees are non-negative
         if any(fee < Decimal('0.00') for fee in [
             student.tuition_fees,
@@ -35,10 +35,9 @@ class StudentService:
                 status_code=400,
                 detail="Fees cannot be negative"
             )
-        
-        return self.student_repo.create(student)
+        return await self.student_repo.create(student)
 
-    def update_student(self, student_id: UUID, student: StudentUpdate):
+    async def update_student(self, student_id: UUID, student: StudentUpdate):
         # Validate fees if provided
         if student.tuition_fees is not None and student.tuition_fees < Decimal('0.00'):
             raise HTTPException(
@@ -56,19 +55,19 @@ class StudentService:
                 detail="Day boarding fees cannot be negative"
             )
 
-        updated_student = self.student_repo.update(student_id, student)
+        updated_student = await self.student_repo.update(student_id, student)
         if not updated_student:
             raise HTTPException(status_code=404, detail="Student not found")
         return updated_student
 
-    def delete_student(self, student_id: UUID):
-        deleted_student = self.student_repo.delete(student_id)
+    async def delete_student(self, student_id: UUID):
+        deleted_student = await self.student_repo.delete(student_id)
         if not deleted_student:
             raise HTTPException(status_code=404, detail="Student not found")
         return deleted_student
 
-    def get_students_by_class(self, class_id: UUID):
-        return self.student_repo.get_by_class(class_id)
+    async def get_students_by_class(self, class_id: UUID):
+        return await self.student_repo.get_by_class(class_id)
 
-    def get_students_by_section(self, section_id: UUID):
-        return self.student_repo.get_by_section(section_id)
+    async def get_students_by_section(self, section_id: UUID):
+        return await self.student_repo.get_by_section(section_id)
