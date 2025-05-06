@@ -8,24 +8,24 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[FeePaymentResponse])
-def get_fee_payments(db=Depends(get_db)):
+async def get_fee_payments(db=Depends(get_db)):
     service = FeePaymentService(db)
-    return service.get_all_payments()
+    return await service.get_all_payments()
 
 
 @router.post("/", response_model=FeePaymentResponse)
-def create_fee_payment(payment: FeePaymentCreate, db=Depends(get_db)):
+async def create_fee_payment(payment: FeePaymentCreate, db=Depends(get_db)):
     service = FeePaymentService(db)
-    return service.create_payment(payment)
+    return await service.create_payment(payment)
 
 
 @router.put("/{payment_id}", response_model=FeePaymentResponse)
-def update_fee_payment(payment_id: UUID, payment: FeePaymentUpdate, db=Depends(get_db)):
+async def update_fee_payment(payment_id: UUID, payment: FeePaymentUpdate, db=Depends(get_db)):
     service = FeePaymentService(db)
-    return service.update_payment(payment_id, payment)
+    return await service.update_payment(payment_id, payment)
 
 
 @router.delete("/{payment_id}")
-def delete_fee_payment(payment_id: UUID, db=Depends(get_db)):
+async def delete_fee_payment(payment_id: UUID, db=Depends(get_db)):
     service = FeePaymentService(db)
-    return service.delete_payment(payment_id)
+    return await service.delete_payment(payment_id)
