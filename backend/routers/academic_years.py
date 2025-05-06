@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[AcademicYear])
-async def get_academic_years(db=Depends(get_db), current_user: User = Depends(current_active_user)):
+async def get_academic_years(db=Depends(get_db)):
     service = AcademicYearService(db)
     return await service.get_all_academic_years()
 

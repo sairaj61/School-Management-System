@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from models import Class
@@ -7,24 +8,29 @@ from uuid import UUID
 
 
 class ClassRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def get_all(self):
-        return self.db.query(Class).all()
+    async def get_all(self):
+        result = await self.db.execute(select(Class))
+        return result.scalars().all()
 
-    def get_by_id(self, class_id: UUID):
-        return self.db.query(Class).filter(Class.id == class_id).first()
+    async def get_by_id(self, class_id: UUID):
+        result = await self.db.execute(select(Class).filter(Class.id == class_id))
+        return result.scalar_one_or_none()
 
-    def get_by_name_and_year(self, name: str, academic_year_id: int):
-        return self.db.query(Class).filter(
-            Class.name == name,
-            Class.academic_year_id == academic_year_id
-        ).first()
+    async def get_by_name_and_year(self, name: str, academic_year_id: UUID):
+        result = await self.db.execute(
+            select(Class).filter(
+                Class.name == name,
+                Class.academic_year_id == academic_year_id
+            )
+        )
+        return result.scalar_one_or_none()
 
-    def create(self, class_: ClassCreate):
-        # Check if class with same name exists in the same academic year
-        existing_class = self.get_by_name_and_year(class_.name, class_.academic_year_id)
+    async def create(self, class_: ClassCreate):
+        # Check if class with the same name exists in the same academic year
+        existing_class = await self.get_by_name_and_year(class_.name, class_.academic_year_id)
         if existing_class:
             raise HTTPException(
                 status_code=400,
@@ -34,35 +40,30 @@ class ClassRepository:
         try:
             db_class = Class(**class_.dict())
             self.db.add(db_class)
-            self.db.commit()
-            self.db.refresh(db_class)
+            await self.db.commit()
+            await self.db.refresh(db_class)
             return db_class
         except IntegrityError:
-            self.db.rollback()
+            await self.db.rollback()
             raise HTTPException(
                 status_code=400,
                 detail="Error creating class. Please check your input."
             )
 
-    def update(self, class_id: UUID, class_: ClassUpdate):
-        db_class = self.get_by_id(class_id)
+    async def update(self, class_id: UUID, class_: ClassUpdate):
+        db_class = await self.get_by_id(class_id)
         if not db_class:
             return None
 
         # If either name or academic_year_id is being updated, check for duplicates
-        if (class_.name or class_.academic_year_id):
+        if class_.name or class_.academic_year_id:
             # Use new values if provided, otherwise use existing values
             check_name = class_.name if class_.name else db_class.name
             check_year_id = class_.academic_year_id if class_.academic_year_id else db_class.academic_year_id
 
-            # Check for existing class with same name in same academic year (excluding current class)
-            existing_class = self.db.query(Class).filter(
-                Class.name == check_name,
-                Class.academic_year_id == check_year_id,
-                Class.id != class_id  # Exclude current class from check
-            ).first()
-
-            if existing_class:
+            # Check for existing class with the same name in the same academic year (excluding current class)
+            existing_class = await self.get_by_name_and_year(check_name, check_year_id)
+            if existing_class and existing_class.id != class_id:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Class with name '{check_name}' already exists in this academic year"
@@ -73,20 +74,20 @@ class ClassRepository:
             for key, value in update_data.items():
                 setattr(db_class, key, value)
 
-            self.db.commit()
-            self.db.refresh(db_class)
+            await self.db.commit()
+            await self.db.refresh(db_class)
             return db_class
         except IntegrityError:
-            self.db.rollback()
+            await self.db.rollback()
             raise HTTPException(
                 status_code=400,
                 detail="Error updating class. Please check your input."
             )
 
-    def delete(self, class_id: UUID):
-        db_class = self.get_by_id(class_id)
+    async def delete(self, class_id: UUID):
+        db_class = await self.get_by_id(class_id)
         if not db_class:
             return None
-        self.db.delete(db_class)
-        self.db.commit()
+        await self.db.delete(db_class)
+        await self.db.commit()
         return db_class
