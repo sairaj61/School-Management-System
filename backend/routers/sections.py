@@ -8,30 +8,30 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[SectionResponse])
-def get_sections(db=Depends(get_db)):
+async def get_sections(db=Depends(get_db)):
     service = SectionService(db)
-    return service.get_all_sections()
+    return await service.get_all_sections()
 
 
 @router.get("/by-class/{class_id}", response_model=list[SectionResponse])
-def get_sections_by_class_id(class_id: UUID, db=Depends(get_db)):
+async def get_sections_by_class_id(class_id: UUID, db=Depends(get_db)):
     service = SectionService(db)
-    return service.get_sections_by_class_id(class_id)
+    return await service.get_sections_by_class_id(class_id)
 
 
 @router.post("/", response_model=SectionResponse)
-def create_section(section: SectionCreate, db=Depends(get_db)):
+async def create_section(section: SectionCreate, db=Depends(get_db)):
     service = SectionService(db)
-    return service.create_section(section)
+    return await service.create_section(section)
 
 
 @router.put("/{section_id}", response_model=SectionResponse)
-def update_section(section_id: UUID, section: SectionUpdate, db=Depends(get_db)):
+async def update_section(section_id: UUID, section: SectionUpdate, db=Depends(get_db)):
     service = SectionService(db)
-    return service.update_section(section_id, section)
+    return await service.update_section(section_id, section)
 
 
 @router.delete("/{section_id}")
-def delete_section(section_id: UUID, db=Depends(get_db)):
+async def delete_section(section_id: UUID, db=Depends(get_db)):
     service = SectionService(db)
-    return service.delete_section(section_id)
+    return await service.delete_section(section_id)
