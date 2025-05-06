@@ -4,7 +4,7 @@ from models import AutoManagement, AutoStudentMapping
 from schemas import AutoManagementCreate, AutoManagementUpdate, AutoStudentMappingCreate
 from fastapi import HTTPException
 from uuid import UUID
-
+from sqlalchemy import delete
 
 class AutoManagementRepository:
     def __init__(self, db: AsyncSession):
@@ -13,6 +13,12 @@ class AutoManagementRepository:
     async def get_all(self):
         result = await self.db.execute(select(AutoManagement))
         return result.scalars().all()
+
+    async def delete(self, auto_id: UUID):
+        # Use the `delete` method from SQLAlchemy
+        stmt = delete(AutoStudentMapping).where(AutoStudentMapping.auto_id == auto_id)
+        await self.db.execute(stmt)
+        await self.db.commit()
 
     async def get_by_id(self, auto_id: UUID):
         result = await self.db.execute(select(AutoManagement).filter(AutoManagement.id == auto_id))
@@ -37,13 +43,13 @@ class AutoManagementRepository:
         await self.db.refresh(db_auto)
         return db_auto
 
-    async def delete(self, auto_id: UUID):
-        db_auto = await self.get_by_id(auto_id)
-        if not db_auto:
-            return None
-        await self.db.delete(db_auto)
-        await self.db.commit()
-        return db_auto
+    # async def delete(self, auto_id: UUID):
+    #     db_auto = await self.get_by_id(auto_id)
+    #     if not db_auto:
+    #         return None
+    #     await self.db.delete(db_auto)
+    #     await self.db.commit()
+    #     return db_auto
 
     async def delete_auto(self, auto_id: UUID):
         try:
@@ -91,16 +97,14 @@ class AutoStudentMappingRepository:
         return db_mapping
 
     async def delete_by_student(self, student_id: UUID):
-        await self.db.execute(
-            select(AutoStudentMapping).filter(AutoStudentMapping.student_id == student_id).delete(synchronize_session=False)
-        )
+        stmt = delete(AutoStudentMapping).where(AutoStudentMapping.student_id == student_id)
+        await self.db.execute(stmt)
         await self.db.commit()
 
     async def delete_by_auto(self, auto_id: UUID):
         """Delete all mappings for a specific auto"""
-        await self.db.execute(
-            select(AutoStudentMapping).filter(AutoStudentMapping.auto_id == auto_id).delete(synchronize_session=False)
-        )
+        stmt = delete(AutoStudentMapping).where(AutoStudentMapping.auto_id == auto_id)
+        await self.db.execute(stmt)
         await self.db.commit()
 
     async def get_students_by_auto(self, auto_id: UUID):
