@@ -20,7 +20,7 @@ async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 # Async generator for dependency injection in FastAPI
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker as session:
+    async with async_session_maker() as session:
         yield session
 
 
