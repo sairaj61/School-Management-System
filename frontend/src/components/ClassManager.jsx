@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 import {
   Container,
   Typography,
@@ -53,7 +54,7 @@ const ClassManager = () => {
   const fetchClasses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/classes/');
+      const response = await axiosInstance.get('http://localhost:8000/classes/');
       setClasses(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -64,7 +65,7 @@ const ClassManager = () => {
 
   const fetchAcademicYears = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/academic-years/');
+      const response = await axiosInstance.get('http://localhost:8000/academic-years/');
       setAcademicYears(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -73,7 +74,7 @@ const ClassManager = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -123,10 +124,10 @@ const ClassManager = () => {
       };
 
       if (selectedClass) {
-        await axios.put(`http://localhost:8000/classes/${selectedClass.id}`, classData);
+        await axiosInstance.put(`http://localhost:8000/classes/${selectedClass.id}`, classData);
         setAlert({ open: true, message: 'Class updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/classes/', classData);
+        await axiosInstance.post('http://localhost:8000/classes/', classData);
         setAlert({ open: true, message: 'Class added successfully!', severity: 'success' });
       }
 
@@ -140,7 +141,7 @@ const ClassManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this class?')) {
       try {
-        await axios.delete(`http://localhost:8000/classes/${id}`);
+        await axiosInstance.delete(`http://localhost:8000/classes/${id}`);
         setAlert({ open: true, message: 'Class deleted successfully!', severity: 'success' });
         fetchClasses();
       } catch (error) {

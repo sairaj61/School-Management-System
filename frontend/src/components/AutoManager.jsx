@@ -14,6 +14,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { Checkbox } from '@mui/material';
+import axiosInstance from '../utils/axiosConfig';
 
 const AutoManager = () => {
   const [autos, setAutos] = useState([]);
@@ -73,7 +74,7 @@ const AutoManager = () => {
   const fetchAutos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/auto-management/autos/with-students');
+      const response = await axiosInstance.get('http://localhost:8000/auto-management/autos/with-students');
       const autoData = response.data || [];
       setAutos(autoData);
       calculateStats(autoData);
@@ -88,7 +89,7 @@ const AutoManager = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -146,10 +147,10 @@ const AutoManager = () => {
     e.preventDefault();
     try {
       if (selectedAuto) {
-        await axios.put(`http://localhost:8000/auto-management/autos/${selectedAuto.id}`, formData);
+        await axiosInstance.put(`http://localhost:8000/auto-management/autos/${selectedAuto.id}`, formData);
         setAlert({ open: true, message: 'Auto updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/auto-management/autos/', formData);
+        await axiosInstance.post('http://localhost:8000/auto-management/autos/', formData);
         setAlert({ open: true, message: 'Auto added successfully!', severity: 'success' });
       }
       handleModalClose();
@@ -161,7 +162,7 @@ const AutoManager = () => {
 
   const handleAssignSubmit = async () => {
     try {
-      await axios.post(
+      await axiosInstance.post(
         `http://localhost:8000/auto-management/autos/${selectedAuto.id}/assign-students`, 
         selectedStudents
       );
@@ -183,7 +184,7 @@ const AutoManager = () => {
     if (window.confirm('Are you sure you want to delete this auto? This will remove all student assignments.')) {
       try {
         setLoading(true);
-        await axios.delete(`http://localhost:8000/auto-management/autos/${id}`);
+        await axiosInstance.delete(`http://localhost:8000/auto-management/autos/${id}`);
         setAlert({ 
           open: true, 
           message: 'Auto and its assignments deleted successfully!', 

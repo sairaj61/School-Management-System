@@ -25,6 +25,7 @@ import ClassIcon from '@mui/icons-material/Class';
 import ViewWeekIcon from '@mui/icons-material/ViewWeek';
 import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
+import axiosInstance from '../utils/axiosConfig';
 
 // Hide on Scroll component
 function HideOnScroll(props) {

@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
+import axiosInstance from '../utils/axiosConfig';
 
 const StudentManager = () => {
   const [students, setStudents] = useState([]);
@@ -62,7 +63,7 @@ const StudentManager = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -73,7 +74,7 @@ const StudentManager = () => {
 
   const fetchClasses = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/classes/');
+      const response = await axiosInstance.get('http://localhost:8000/classes/');
       setClasses(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -82,7 +83,7 @@ const StudentManager = () => {
 
   const fetchAllSections = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/sections/');
+      const response = await axiosInstance.get('http://localhost:8000/sections/');
       setSections(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -91,7 +92,7 @@ const StudentManager = () => {
 
   const fetchSections = async (classId) => {
     try {
-      const response = await axios.get('http://localhost:8000/sections/');
+      const response = await axiosInstance.get('http://localhost:8000/sections/');
       const filteredSections = response.data.filter(section => section.class_id === classId);
       setSections(filteredSections);
     } catch (error) {
@@ -101,7 +102,7 @@ const StudentManager = () => {
 
   const fetchAcademicYears = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/academic-years/');
+      const response = await axiosInstance.get('http://localhost:8000/academic-years/');
       setAcademicYears(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -212,10 +213,10 @@ const StudentManager = () => {
       };
 
       if (selectedStudent) {
-        await axios.put(`http://localhost:8000/students/${selectedStudent.id}`, studentData);
+        await axiosInstance.put(`http://localhost:8000/students/${selectedStudent.id}`, studentData);
         setAlert({ open: true, message: 'Student updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/students/', studentData);
+        await axiosInstance.post('http://localhost:8000/students/', studentData);
         setAlert({ open: true, message: 'Student added successfully!', severity: 'success' });
       }
 
@@ -229,7 +230,7 @@ const StudentManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
       try {
-        await axios.delete(`http://localhost:8000/students/${id}`);
+        await axiosInstance.delete(`http://localhost:8000/students/${id}`);
         setAlert({ open: true, message: 'Student deleted successfully!', severity: 'success' });
         fetchStudents();
       } catch (error) {

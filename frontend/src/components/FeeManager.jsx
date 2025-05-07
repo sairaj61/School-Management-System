@@ -10,6 +10,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import PendingIcon from '@mui/icons-material/Pending';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import axiosInstance from '../utils/axiosConfig';
 
 const MONTHS = [
   'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
@@ -77,7 +78,7 @@ const FeeManager = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/fee_payments/');
+      const response = await axiosInstance.get('http://localhost:8000/fee_payments/');
       const transformedPayments = response.data.map(payment => ({
         ...payment,
         tuition_fees: parseFloat(payment.tuition_fees),
@@ -95,7 +96,7 @@ const FeeManager = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -157,10 +158,10 @@ const FeeManager = () => {
       };
 
       if (selectedPayment) {
-        await axios.put(`http://localhost:8000/fee_payments/${selectedPayment.id}`, paymentData);
+        await axiosInstance.put(`http://localhost:8000/fee_payments/${selectedPayment.id}`, paymentData);
         setAlert({ open: true, message: 'Payment updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/fee_payments/', paymentData);
+        await axiosInstance.post('http://localhost:8000/fee_payments/', paymentData);
         setAlert({ open: true, message: 'Payment added successfully!', severity: 'success' });
       }
 
@@ -174,7 +175,7 @@ const FeeManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this payment?')) {
       try {
-        await axios.delete(`http://localhost:8000/fee_payments/${id}`);
+        await axiosInstance.delete(`http://localhost:8000/fee_payments/${id}`);
         setAlert({ open: true, message: 'Payment deleted successfully!', severity: 'success' });
         fetchPayments();
       } catch (error) {

@@ -10,6 +10,7 @@ import ViewWeekIcon from '@mui/icons-material/ViewWeek';
 import GroupsIcon from '@mui/icons-material/Groups';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ClassIcon from '@mui/icons-material/Class';
+import axiosInstance from '../utils/axiosConfig';
 
 const SectionManager = () => {
   const [sections, setSections] = useState([]);
@@ -39,7 +40,7 @@ const SectionManager = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get('http://localhost:8000/students/');
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -49,7 +50,7 @@ const SectionManager = () => {
   const fetchSections = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/sections/');
+      const response = await axiosInstance.get('http://localhost:8000/sections/');
       setSections(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -60,7 +61,7 @@ const SectionManager = () => {
 
   const fetchClasses = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/classes/');
+      const response = await axiosInstance.get('http://localhost:8000/classes/');
       setClasses(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -110,10 +111,10 @@ const SectionManager = () => {
       };
 
       if (selectedSection) {
-        await axios.put(`http://localhost:8000/sections/${selectedSection.id}`, sectionData);
+        await axiosInstance.put(`http://localhost:8000/sections/${selectedSection.id}`, sectionData);
         setAlert({ open: true, message: 'Section updated successfully!', severity: 'success' });
       } else {
-        await axios.post('http://localhost:8000/sections/', sectionData);
+        await axiosInstance.post('http://localhost:8000/sections/', sectionData);
         setAlert({ open: true, message: 'Section added successfully!', severity: 'success' });
       }
 
@@ -127,7 +128,7 @@ const SectionManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this section?')) {
       try {
-        await axios.delete(`http://localhost:8000/sections/${id}`);
+        await axiosInstance.delete(`http://localhost:8000/sections/${id}`);
         setAlert({ open: true, message: 'Section deleted successfully!', severity: 'success' });
         fetchSections();
       } catch (error) {
