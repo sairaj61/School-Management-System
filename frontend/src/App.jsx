@@ -1,163 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './index.css';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { CssBaseline } from '@mui/material';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import StudentManager from './components/StudentManager';
+import ClassManager from './components/ClassManager';
+import SectionManager from './components/SectionManager';
+import FeeManager from './components/FeeManager';
+import AutoManager from './components/AutoManager';
 
 const App = () => {
-  const [students, setStudents] = useState([]);
-  const [newStudent, setNewStudent] = useState({
-    name: '',
-    date_of_birth: '',
-    contact: '',
-    address: '',
-    enrollment_date: '',
-    class_id: 1,
-    section_id: 1,
-  });
-  const [dashboard, setDashboard] = useState({});
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
-  useEffect(() => {
-    fetchStudents();
-    fetchDashboard();
-  }, []);
-
-  const fetchStudents = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/students/');
-      setStudents(response.data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
+  const handleLogin = (newToken) => {
+    // Store the token in local storage and set it in state
+    console.log('Login successful, token:', newToken);
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
   };
 
-  const fetchDashboard = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/dashboard/');
-      setDashboard(response.data);
-    } catch (error) {
-      console.error('Error fetching dashboard:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewStudent({ ...newStudent, [name]: value });
-  };
-
-  const handleAddStudent = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('http://localhost:8000/students/', newStudent);
-      fetchStudents();
-      setNewStudent({
-        name: '',
-        date_of_birth: '',
-        contact: '',
-        address: '',
-        enrollment_date: '',
-        class_id: 1,
-        section_id: 1,
-      });
-    } catch (error) {
-      console.error('Error adding student:', error);
-    }
+  const handleLogout = () => {
+    console.log('Logout successful, token:', token);
+    localStorage.removeItem('token');
+    setToken(null);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">School Management System</h1>
+    <Router>
+      <CssBaseline />
+      <Routes>
+        {token ? (
+          <Route path="/*" element={<AuthenticatedApp onLogout={handleLogout} />} />
+        ) : (
+          <Route path="/*" element={<UnauthenticatedApp onLogin={handleLogin} />} />
+        )}
+      </Routes>
+    </Router>
+  );
+};
 
-      {/* Dashboard */}
-      <div className="mb-8 p-4 bg-gray-100 rounded">
-        <h2 className="text-2xl font-semibold mb-2">Dashboard</h2>
-        <p>Total Students: {dashboard.total_students || 0}</p>
-        <p>Total Payments: ${dashboard.total_payments || 0}</p>
-        <p>Total Dues: ${dashboard.total_dues || 0}</p>
-        <h3 className="mt-4">Monthly Breakdown</h3>
-        <ul>
-          {dashboard.monthly_breakdown?.map((item, index) => (
-            <li key={index}>
-              {item.month}: Payments ${item.payments}, Dues ${item.dues}
-            </li>
-          ))}
-        </ul>
-      </div>
+const AuthenticatedApp = ({ onLogout }) => {
+  return (
+    <>
+      <Navbar onLogout={onLogout} />
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/students" element={<StudentManager />} />
+        <Route path="/classes" element={<ClassManager />} />
+        <Route path="/sections" element={<SectionManager />} />
+        <Route path="/fees" element={<FeeManager />} />
+        <Route path="/auto" element={<AutoManager />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </>
+  );
+};
 
-      {/* Add Student Form */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Add Student</h2>
-        <form onSubmit={handleAddStudent} className="grid grid-cols-1 gap-4">
-          <input
-            type="text"
-            name="name"
-            value={newStudent.name}
-            onChange={handleInputChange}
-            placeholder="Name"
-            className="p-2 border rounded"
-            required
-          />
-          <input
-            type="date"
-            name="date_of_birth"
-            value={newStudent.date_of_birth}
-            onChange={handleInputChange}
-            className="p-2 border rounded"
-            required
-          />
-          <input
-            type="text"
-            name="contact"
-            value={newStudent.contact}
-            onChange={handleInputChange}
-            placeholder="Contact"
-            className="p-2 border rounded"
-            required
-          />
-          <input
-            type="text"
-            name="address"
-            value={newStudent.address}
-            onChange={handleInputChange}
-            placeholder="Address"
-            className="p-2 border rounded"
-            required
-          />
-          <input
-            type="date"
-            name="enrollment_date"
-            value={newStudent.enrollment_date}
-            onChange={handleInputChange}
-            className="p-2 border rounded"
-            required
-          />
-          <button type="submit" className="p-2 bg-blue-500 text-white rounded">
-            Add Student
-          </button>
-        </form>
-      </div>
-
-      {/* Student List */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-2">Students</h2>
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2">ID</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Contact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <tr key={student.id} className="border-t">
-                <td className="p-2">{student.id}</td>
-                <td className="p-2">{student.name}</td>
-                <td className="p-2">{student.contact}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+const UnauthenticatedApp = ({ onLogin }) => {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login onLogin={onLogin} />} />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   );
 };
 

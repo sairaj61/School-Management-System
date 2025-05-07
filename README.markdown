@@ -1,15 +1,16 @@
 # School Management System
 
-A scalable system for managing school students, classes, sections, fees, and car rents, with a FastAPI backend, React frontend, and SQLite database.
+A scalable system for managing school students, classes, sections, and fees, with a FastAPI backend, React frontend, and SQLite database.
+
+## Features
+- **CRUD Operations**: Manage students, classes, sections, and fee payments (per student).
+- **Dashboard**: Displays total students, payments, dues, and student payment status with charts.
+- **Scalability**: Supports 10,000+ students with indexed database tables.
+- **Data Persistence**: SQLite with archival strategy for 50-year retention.
+- **Responsive UI**: Built with React, Tailwind CSS, and Chart.js for visualizations.
+- **User-Friendly**: Tabular interface, input validation, and success/error feedback.
 
 ## Prerequisites
-
-### For Docker Setup
-- Docker
-- Docker Compose
-- Git
-
-### For Local Setup
 - **Python 3.11+**: For the backend.
 - **Node.js 18+**: For the frontend.
 - **Git**: To clone the repository.
@@ -17,7 +18,6 @@ A scalable system for managing school students, classes, sections, fees, and car
 
 ## Setup Instructions
 
-### Option 1: Running with Docker
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/xAI-School-Management-System/school-management-system.git
@@ -29,8 +29,23 @@ A scalable system for managing school students, classes, sections, fees, and car
    school-management-system/
    ├── backend/
    │   ├── main.py
+   │   ├── database.py
+   │   ├── schemas.py
+   │   ├── models.py
+   │   ├── services/
+   │   │   ├── __init__.py
+   │   │   ├── student_service.py
+   │   │   ├── class_service.py
+   │   │   ├── section_service.py
+   │   │   ├── fee_service.py
+   │   ├── repositories/
+   │   │   ├── __init__.py
+   │   │   ├── student_repository.py
+   │   │   ├── class_repository.py
+   │   │   ├── section_repository.py
+   │   │   ├── fee_repository.py
    │   ├── requirements.txt
-   │   ├── Dockerfile
+   │   ├── test_main.py
    ├── frontend/
    │   ├── src/
    │   │   ├── App.jsx
@@ -40,43 +55,19 @@ A scalable system for managing school students, classes, sections, fees, and car
    │   ├── package.json
    │   ├── vite.config.js
    │   ├── tailwind.config.js
-   │   ├── Dockerfile
-   ├── docker-compose.yml
+   ├── .gitignore
    ├── README.md
    ```
 
-3. **Run the Application**:
-   ```bash
-   docker-compose up --build
-   ```
-   - Backend: `http://localhost:8000`
-   - Frontend: `http://localhost:3000`
-   - API Docs: `http://localhost:8000/docs`
-
-4. **Access the System**:
-   - Open `http://localhost:3000` in a browser.
-   - Use the UI to add students and view the dashboard.
-   - Sample data is preloaded (1 class, 1 section, 1 fee structure).
-
-### Option 2: Running Locally (Without Docker)
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/xAI-School-Management-System/school-management-system.git
-   cd school-management-system
-   ```
-
-2. **Set Up the Backend**:
+3. **Set Up the Backend**:
    - Navigate to the backend directory:
      ```bash
      cd backend
      ```
-   - Create a virtual environment and activate it:
+   - Create and activate a virtual environment:
      ```bash
      python -m venv venv
-     # On Windows:
      venv\Scripts\activate
-     # On macOS/Linux:
-     source venv/bin/activate
      ```
    - Install dependencies:
      ```bash
@@ -88,7 +79,7 @@ A scalable system for managing school students, classes, sections, fees, and car
      ```
    - The backend will be available at `http://localhost:8000`.
 
-3. **Set Up the Frontend**:
+4. **Set Up the Frontend**:
    - Open a new terminal and navigate to the frontend directory:
      ```bash
      cd frontend
@@ -107,102 +98,49 @@ A scalable system for managing school students, classes, sections, fees, and car
      ```
    - The frontend will be available at `http://localhost:3000`.
 
-4. **Access the System**:
+5. **Access the System**:
    - Open `http://localhost:3000` in a browser.
-   - The frontend communicates with the backend at `http://localhost:8000`.
-   - Use the UI to add students and view the dashboard.
+   - Navigate tabs (Dashboard, Students, Classes, Sections, Fees) to manage entities.
+   - Sample data is preloaded (2 classes, 2 sections, 1 student, 1 fee payment).
    - API Docs: `http://localhost:8000/docs`.
 
-5. **Database**:
-   - The SQLite database (`school.db`) is created automatically in the `backend/` directory when the backend starts.
-   - Sample data (1 class, 1 section, 1 fee structure) is preloaded on first run.
+6. **Running Tests**:
+   - Install Pytest:
+     ```bash
+     cd backend
+     pip install pytest
+     ```
+   - Run tests:
+     ```bash
+     pytest test_main.py
+     ```
+   - Manually test the frontend by adding/editing entities and checking the dashboard.
 
 ## Troubleshooting
 
-### General Issues
 - **Backend Errors**:
   - Ensure Python 3.11+ is installed (`python --version`).
-  - Verify all dependencies are installed (`pip list`).
-  - Check if port 8000 is free (`netstat -a -n -o` on Windows).
+  - Verify dependencies (`pip list`).
+  - Check if port 8000 is free (`netstat -a -n -o`).
+  - If import errors occur, ensure files are in the correct directories (e.g., `schemas.py` in `backend/`).
 - **Frontend Errors**:
   - Ensure Node.js 18+ is installed (`node --version`).
-  - Run `npm install` again if you encounter module errors.
+  - Run `npm install` again for module errors.
   - Check if port 3000 is free.
-- **CORS Issues**: The backend includes CORS middleware to allow requests from `http://localhost:3000`. Ensure both servers are running.
-- **Database Issues**: If `school.db` is corrupted, delete it and restart the backend to recreate it with sample data.
-
-### Specific Error: `NameError: name 'Depends' is not defined`
-- **Cause**: Missing import of `Depends` from `fastapi` in `backend/main.py`.
-- **Solution**:
-  - Ensure `main.py` includes the line:
-    ```python
-    from fastapi import FastAPI, HTTPException, Depends
-    ```
-  - Reinstall dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-  - Recreate the virtual environment if needed:
-    ```bash
-    cd backend
-    rmdir venv /s /q  # On Windows
-    python -m venv venv
-    venv\Scripts\activate
-    pip install -r requirements.txt
-    ```
-
-### Specific Error: Vite Entry Point Issue
-- **Error Message**: `Could not auto-determine entry point from rollupOptions or html files...`
-- **Cause**: Missing `index.html` or incorrect Vite configuration.
-- **Solution**:
-  - Ensure `frontend/index.html` exists and references `src/main.jsx`.
-  - Verify `vite.config.js` is present and configured:
-    ```javascript
-    import { defineConfig } from 'vite';
-    import react from '@vitejs/plugin-react';
-    export default defineConfig({
-      plugins: [react()],
-      server: { port: 3000, open: true },
-    });
-    ```
-  - Check that `src/main.jsx` renders the `App` component.
-  - Reinstall frontend dependencies:
-    ```bash
-    cd frontend
-    npm install
-    npm audit fix
-    ```
-
-### NPM Vulnerabilities
-- **Issue**: `npm install` reports vulnerabilities.
-- **Solution**:
-  - Run:
-    ```bash
-    npm audit fix
-    ```
-  - Avoid `npm audit fix --force` unless necessary, as it may introduce breaking changes.
-  - If vulnerabilities persist, update dependencies manually in `package.json` and rerun `npm install`.
-
-### Other Common Issues
-- **Windows Path Issues**: Use backslashes (`\`) in paths (e.g., `venv\Scripts\activate`).
-- **Frontend Port Mismatch**: If the frontend runs on `5173` instead of `3000`, ensure `vite.config.js` sets `server.port` to `3000`.
-- **Backend Not Reachable**: Start the backend before the frontend. Check browser console for CORS or network errors.
+  - If Chart.js fails, verify `chart.js` and `react-chartjs-2` in `node_modules`.
+- **Database Issues**: Delete `school.db` and restart the backend to recreate with sample data.
+- **CORS Issues**: Backend allows requests from `http://localhost:3000`. Ensure both servers are running.
 
 ## API Endpoints
-- **Students**:
-  - `POST /students/`: Create a student.
-  - `GET /students/`: List students.
-  - `GET /students/{id}`: Get student details.
-  - `PUT /students/{id}`: Update student.
-  - `DELETE /students/{id}`: Delete student.
-- **Fee Payments**:
-  - `POST /fee_payments/`: Record a payment.
-- **Dashboard**:
-  - `GET /dashboard/`: Get dashboard metrics.
+- **Students**: `POST/GET/PUT/DELETE /students/`, `GET /students/{id}`
+- **Classes**: `POST/GET/PUT/DELETE /classes/`, `GET /classes/{id}`
+- **Sections**: `POST/GET/PUT/DELETE /sections/`, `GET /sections/{id}`
+- **Fee Payments**: `POST/GET /fee_payments/`
+- **Dashboard**: `GET /dashboard/`
 
 ## Notes
-- **Database**: SQLite is used for simplicity and persists in `backend/school.db`. For production with 10,000+ students, consider switching to PostgreSQL.
-- **Scalability**: The system supports 10,000+ students with indexing on key fields. Optimize queries for large datasets.
-- **Extensibility**: Add CRUD endpoints for classes, sections, and fees in `backend/main.py`. Enhance the frontend with additional forms and charts.
-- **Security**: Add JWT authentication for production use.
-- **Persistence**: SQLite ensures 50 years of data retention with proper backups.
+- **Database**: SQLite (`backend/school.db`). Switch to PostgreSQL for production.
+- **Scalability**: Indexes on key fields support 10,000+ students. Optimize queries for large datasets.
+- **Persistence**: Regular backups ensure 50-year data retention.
+- **Security**: Add JWT authentication for production.
+- **Testing**: Backend tests in `test_main.py`. Extend with frontend tests (e.g., Jest).
