@@ -81,9 +81,10 @@ const Navbar = () => {
     try {
       await axiosInstance.post('http://localhost:8000/auth/jwt/logout');
       localStorage.removeItem('token'); // Remove token from localStorage
-      navigate('/'); // Redirect to login page
+      navigate('/', { replace: true }); // Redirect to login page with replace option
     } catch (error) {
       console.error('Error during logout:', error);
+      navigate('/', { replace: true }); // Ensure redirection even if logout API fails
     }
   };
 
