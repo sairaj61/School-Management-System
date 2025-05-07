@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
@@ -15,11 +14,14 @@ const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   const handleLogin = (newToken) => {
+    // Store the token in local storage and set it in state
+    console.log('Login successful, token:', newToken);
     localStorage.setItem('token', newToken);
     setToken(newToken);
   };
 
   const handleLogout = () => {
+    console.log('Logout successful, token:', token);
     localStorage.removeItem('token');
     setToken(null);
   };
@@ -27,31 +29,40 @@ const App = () => {
   return (
     <Router>
       <CssBaseline />
-      {token && <Navbar onLogout={handleLogout} />}
       <Routes>
-        {/* Public Routes */}
-        {!token && (
-          <>
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </>
-        )}
-
-        {/* Private Routes */}
-        {token && (
-          <>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/students" element={<StudentManager />} />
-            <Route path="/classes" element={<ClassManager />} />
-            <Route path="/sections" element={<SectionManager />} />
-            <Route path="/fees" element={<FeeManager />} />
-            <Route path="/auto" element={<AutoManager />} />
-            <Route path="/login" element={<Navigate to="/dashboard" />} />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </>
+        {token ? (
+          <Route path="/*" element={<AuthenticatedApp onLogout={handleLogout} />} />
+        ) : (
+          <Route path="/*" element={<UnauthenticatedApp onLogin={handleLogin} />} />
         )}
       </Routes>
     </Router>
+  );
+};
+
+const AuthenticatedApp = ({ onLogout }) => {
+  return (
+    <>
+      <Navbar onLogout={onLogout} />
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/students" element={<StudentManager />} />
+        <Route path="/classes" element={<ClassManager />} />
+        <Route path="/sections" element={<SectionManager />} />
+        <Route path="/fees" element={<FeeManager />} />
+        <Route path="/auto" element={<AutoManager />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </>
+  );
+};
+
+const UnauthenticatedApp = ({ onLogin }) => {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login onLogin={onLogin} />} />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   );
 };
 

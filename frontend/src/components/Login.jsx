@@ -8,7 +8,11 @@ import {
   Snackbar,
   Alert,
   Box,
+  Paper,
+  CircularProgress,
+  InputAdornment,
 } from '@mui/material';
+import { AccountCircle, Lock } from '@mui/icons-material';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -39,9 +43,9 @@ const Login = ({ onLogin }) => {
         }
       );
       const token = response.data.access_token;
-      localStorage.setItem('token', token); // Store the token in localStorage
+      localStorage.setItem('token', token);
       setAlert({ open: true, message: 'Login successful!', severity: 'success' });
-      onLogin(token); // Pass the token to the parent component
+      onLogin(token);
     } catch (error) {
       setAlert({
         open: true,
@@ -54,44 +58,76 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Typography variant="h4" gutterBottom>
-        Login
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Username"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-            fullWidth
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            fullWidth
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </Button>
-        </Box>
-      </form>
+    <Box
+      sx={{
+        height: '100vh',
+        background: 'linear-gradient(to right, #e3f2fd, #ffffff)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Paper elevation={6} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>
+        <Typography variant="h5" textAlign="center" gutterBottom>
+          Welcome Back
+        </Typography>
+        <Typography variant="body2" textAlign="center" color="text.secondary" mb={3}>
+          Please enter your credentials to continue
+        </Typography>
+
+        <form onSubmit={handleSubmit}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              required
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircle />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              fullWidth
+              size="large"
+              sx={{ mt: 1 }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
+            </Button>
+          </Box>
+        </form>
+      </Paper>
+
       <Snackbar
         open={alert.open}
-        autoHideDuration={6000}
+        autoHideDuration={5000}
         onClose={() => setAlert({ ...alert, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
           onClose={() => setAlert({ ...alert, open: false })}
@@ -101,7 +137,7 @@ const Login = ({ onLogin }) => {
           {alert.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 
