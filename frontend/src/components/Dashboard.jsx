@@ -4,7 +4,7 @@ import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Container, Grid, Card, CardContent, Typography, Snackbar, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-
+import axiosInstance from '../utils/axiosConfig';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
@@ -22,7 +22,7 @@ const Dashboard = () => {
 
   const fetchDashboard = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/dashboard/');
+      const response = await axiosInstance.get('http://localhost:8000/dashboard/');
       setDashboard(response.data);
     } catch (error) {
       setAlert({ open: true, message: 'Error fetching dashboard: ' + error.message, severity: 'error' });
