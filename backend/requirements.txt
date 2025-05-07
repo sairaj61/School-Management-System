@@ -59,3 +59,4 @@ uuid==1.30
 uvicorn==0.30.6
 watchfiles==1.0.5
 websockets==15.0.1
+asyncpg==0.27.0
