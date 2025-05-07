@@ -16,7 +16,6 @@ import {
   useTheme,
   useMediaQuery,
   Slide,
-  useScrollTrigger,
   Fade,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -27,12 +26,12 @@ import ViewWeekIcon from '@mui/icons-material/ViewWeek';
 import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import axiosInstance from '../utils/axiosConfig';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
 
-// Hide on Scroll component
+
 function HideOnScroll(props) {
   const { children } = props;
   const trigger = useScrollTrigger();
-
   return (
     <Slide appear={false} direction="down" in={!trigger}>
       {children}
@@ -46,7 +45,6 @@ const Navbar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   const navigationItems = [
     { path: '/', label: 'Dashboard', icon: <DashboardIcon /> },
@@ -57,21 +55,8 @@ const Navbar = () => {
     { path: '/auto', label: 'Auto', icon: <DirectionsBusIcon /> },
   ];
 
-  const getTabValue = () => {
-    return navigationItems.findIndex((item) => item.path === location.pathname);
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 0;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [scrolled]);
+  const getTabValue = () =>
+    navigationItems.findIndex((item) => item.path === location.pathname);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -80,46 +65,41 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await axiosInstance.post('http://localhost:8000/auth/jwt/logout');
-      localStorage.removeItem('token'); // Remove token from localStorage
-      navigate('/', { replace: true }); // Redirect to login page with replace option
     } catch (error) {
-      console.error('Error during logout:', error);
-      navigate('/', { replace: true }); // Ensure redirection even if logout API fails
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      navigate('/login', { replace: true });
     }
   };
 
   const drawer = (
-    <Box sx={{ mt: 2 }}>
-      <List>
-        {navigationItems.map((item) => (
-          <ListItem
-            button
-            key={item.path}
-            component={NavLink}
-            to={item.path}
-            onClick={handleDrawerToggle}
-            sx={{
-              color: 'inherit',
-              '&.active': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '& .MuiListItemIcon-root': {
-                  color: 'inherit',
-                },
-              },
-            }}
-          >
-            <Box sx={{ mr: 2 }}>{item.icon}</Box>
-            <ListItemText primary={item.label} />
-          </ListItem>
-        ))}
-        <ListItem button onClick={handleLogout} sx={{ color: 'inherit' }}>
-          <Box sx={{ mr: 2 }}>
-            <Typography variant="body1">Logout</Typography>
-          </Box>
+    <List>
+      {navigationItems.map((item) => (
+        <ListItem
+          button
+          key={item.path}
+          component={NavLink}
+          to={item.path}
+          onClick={handleDrawerToggle}
+          sx={{
+            color: 'inherit',
+            '&.active': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+            },
+          }}
+        >
+          <Box sx={{ mr: 2 }}>{item.icon}</Box>
+          <ListItemText primary={item.label} />
         </ListItem>
-      </List>
-    </Box>
+      ))}
+      <ListItem button onClick={handleLogout} sx={{ color: 'inherit' }}>
+        <Box sx={{ mr: 2 }}>
+          <Typography variant="body1">Logout</Typography>
+        </Box>
+      </ListItem>
+    </List>
   );
 
   return (
@@ -130,30 +110,22 @@ const Navbar = () => {
           sx={{
             bgcolor: 'primary.main',
             boxShadow: 2,
-            transition: 'all 0.3s ease-in-out',
             zIndex: (theme) => theme.zIndex.drawer + 1,
-            '& .MuiToolbar-root': {
-              minHeight: '64px',
-              px: { xs: 2, sm: 4 },
-            },
+            transition: 'all 0.3s ease-in-out',
           }}
         >
-          <Toolbar>
+          <Toolbar sx={{ minHeight: '64px', px: { xs: 2, sm: 4 } }}>
             {isMobile && (
               <IconButton
-                color="inherit"
                 edge="start"
+                color="inherit"
                 onClick={handleDrawerToggle}
-                sx={{
-                  mr: 2,
-                  '&:hover': {
-                    bgcolor: 'primary.dark',
-                  },
-                }}
+                sx={{ mr: 2 }}
               >
                 <MenuIcon />
               </IconButton>
             )}
+
             <Fade in>
               <Typography
                 variant="h6"
@@ -168,6 +140,7 @@ const Navbar = () => {
                 School Management
               </Typography>
             </Fade>
+
             {!isMobile && (
               <>
                 <Tabs
@@ -202,14 +175,7 @@ const Navbar = () => {
                     <Tab
                       key={item.path}
                       label={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            py: 0.5,
-                          }}
-                        >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {item.icon}
                           <span>{item.label}</span>
                         </Box>
@@ -232,22 +198,21 @@ const Navbar = () => {
           </Toolbar>
         </AppBar>
       </HideOnScroll>
+
       <Toolbar sx={{ mb: 2 }} />
 
-      {/* Mobile Drawer with improved styling */}
+      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         anchor="left"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
             width: 280,
+            boxSizing: 'border-box',
             bgcolor: 'background.paper',
             boxShadow: 2,
           },
@@ -257,20 +222,11 @@ const Navbar = () => {
         <Box
           sx={{
             overflow: 'auto',
+            px: 1,
             '& .MuiListItem-root': {
               borderRadius: 1,
-              mx: 1,
               mb: 0.5,
-              '&.active': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '& .MuiListItemIcon-root': {
-                  color: 'inherit',
-                },
-              },
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
+              '&:hover': { bgcolor: 'action.hover' },
             },
           }}
         >
