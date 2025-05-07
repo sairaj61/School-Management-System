@@ -69,7 +69,7 @@ const Navbar = () => {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
-      navigate('/login', { replace: true });
+      window.location.reload();
     }
   };
 
