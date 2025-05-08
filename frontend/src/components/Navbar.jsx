@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -27,7 +27,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import axiosInstance from '../utils/axiosConfig';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
-
+import appConfig from '../config/appConfig'; // Import the config file
 
 function HideOnScroll(props) {
   const { children } = props;
@@ -47,7 +47,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navigationItems = [
-    { path: '/', label: 'Dashboard', icon: <DashboardIcon /> },
+    { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
     { path: '/students', label: 'Students', icon: <PeopleIcon /> },
     { path: '/classes', label: 'Classes', icon: <ClassIcon /> },
     { path: '/sections', label: 'Sections', icon: <ViewWeekIcon /> },
@@ -69,7 +69,7 @@ const Navbar = () => {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
-      window.location.reload();
+      navigate('/login');
     }
   };
 
@@ -114,7 +114,14 @@ const Navbar = () => {
             transition: 'all 0.3s ease-in-out',
           }}
         >
-          <Toolbar sx={{ minHeight: '64px', px: { xs: 2, sm: 4 } }}>
+          <Toolbar
+            sx={{
+              minHeight: '64px',
+              px: { xs: 2, sm: 4 },
+              display: 'flex',
+              justifyContent: 'space-between', // Ensures proper spacing between logo and menu items
+            }}
+          >
             {isMobile && (
               <IconButton
                 edge="start"
@@ -127,18 +134,24 @@ const Navbar = () => {
             )}
 
             <Fade in>
-              <Typography
-                variant="h6"
-                sx={{
-                  flexGrow: 1,
-                  fontWeight: 700,
-                  letterSpacing: 1,
-                  color: 'white',
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-                }}
-              >
-                School Management
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+                <img
+                  src={appConfig.logo}
+                  alt="Logo"
+                  style={{ height: '40px', width: '40px' }}
+                />
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    color: 'white',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  {appConfig.appName}
+                </Typography>
+              </Box>
             </Fade>
 
             {!isMobile && (
