@@ -92,6 +92,7 @@ class FeePayment(Base):
     day_boarding_fees = Column(DECIMAL(10, 2))
     total_amount = Column(DECIMAL(10, 2))
     transaction_date = Column(DateTime, default=datetime.utcnow)
+    receipt_number = Column(String, nullable=True)
 
     # Relationships
     student = relationship("Student", back_populates="fee_payments")

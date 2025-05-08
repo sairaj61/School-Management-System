@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi_users import schemas
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
