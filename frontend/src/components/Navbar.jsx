@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
   Typography,
-  Tabs,
-  Tab,
   IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Box,
   Button,
+  Menu,
+  MenuItem,
+  Box,
   useTheme,
   useMediaQuery,
   Slide,
   Fade,
+  useScrollTrigger, // Import useScrollTrigger
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -25,13 +22,12 @@ import ClassIcon from '@mui/icons-material/Class';
 import ViewWeekIcon from '@mui/icons-material/ViewWeek';
 import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
-import axiosInstance from '../utils/axiosConfig';
-import useScrollTrigger from '@mui/material/useScrollTrigger';
+import SchoolIcon from '@mui/icons-material/School';
 import appConfig from '../config/appConfig'; // Import the config file
 
 function HideOnScroll(props) {
   const { children } = props;
-  const trigger = useScrollTrigger();
+  const trigger = useScrollTrigger(); // Hook to detect scroll
   return (
     <Slide appear={false} direction="down" in={!trigger}>
       {children}
@@ -40,67 +36,23 @@ function HideOnScroll(props) {
 }
 
 const Navbar = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const navigationItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-    { path: '/students', label: 'Students', icon: <PeopleIcon /> },
-    { path: '/classes', label: 'Classes', icon: <ClassIcon /> },
-    { path: '/sections', label: 'Sections', icon: <ViewWeekIcon /> },
-    { path: '/fees', label: 'Fees', icon: <PaymentIcon /> },
-    { path: '/auto', label: 'Auto', icon: <DirectionsBusIcon /> },
-  ];
-
-  const getTabValue = () =>
-    navigationItems.findIndex((item) => item.path === location.pathname);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const handleLogout = async () => {
-    try {
-      await axiosInstance.post('http://localhost:8000/auth/jwt/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('token');
-      navigate('/login');
-    }
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
-  const drawer = (
-    <List>
-      {navigationItems.map((item) => (
-        <ListItem
-          button
-          key={item.path}
-          component={NavLink}
-          to={item.path}
-          onClick={handleDrawerToggle}
-          sx={{
-            color: 'inherit',
-            '&.active': {
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-            },
-          }}
-        >
-          <Box sx={{ mr: 2 }}>{item.icon}</Box>
-          <ListItemText primary={item.label} />
-        </ListItem>
-      ))}
-      <ListItem button onClick={handleLogout} sx={{ color: 'inherit' }}>
-        <Box sx={{ mr: 2 }}>
-          <Typography variant="body1">Logout</Typography>
-        </Box>
-      </ListItem>
-    </List>
-  );
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
     <>
@@ -119,14 +71,14 @@ const Navbar = () => {
               minHeight: '64px',
               px: { xs: 2, sm: 4 },
               display: 'flex',
-              justifyContent: 'space-between', // Ensures proper spacing between logo and menu items
+              justifyContent: 'space-between',
             }}
           >
             {isMobile && (
               <IconButton
                 edge="start"
                 color="inherit"
-                onClick={handleDrawerToggle}
+                onClick={() => setAnchorEl(!anchorEl)}
                 sx={{ mr: 2 }}
               >
                 <MenuIcon />
@@ -134,7 +86,7 @@ const Navbar = () => {
             )}
 
             <Fade in>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <img
                   src={appConfig.logo}
                   alt="Logo"
@@ -155,49 +107,80 @@ const Navbar = () => {
             </Fade>
 
             {!isMobile && (
-              <>
-                <Tabs
-                  value={getTabValue()}
-                  textColor="inherit"
-                  indicatorColor="secondary"
-                  sx={{
-                    '& .MuiTab-root': {
-                      minWidth: 'auto',
-                      minHeight: '64px',
-                      px: 3,
-                      color: 'white',
-                      opacity: 0.7,
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        opacity: 1,
-                        transform: 'translateY(-2px)',
-                        bgcolor: 'primary.dark',
-                      },
-                      '&.Mui-selected': {
-                        opacity: 1,
-                        fontWeight: 'bold',
-                      },
-                    },
-                    '& .MuiTabs-indicator': {
-                      height: 3,
-                      borderRadius: '3px 3px 0 0',
-                    },
-                  }}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Button
+                  color="inherit"
+                  startIcon={<DashboardIcon />}
+                  component={NavLink}
+                  to="/dashboard"
                 >
-                  {navigationItems.map((item) => (
-                    <Tab
-                      key={item.path}
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {item.icon}
-                          <span>{item.label}</span>
-                        </Box>
-                      }
-                      component={NavLink}
-                      to={item.path}
-                    />
-                  ))}
-                </Tabs>
+                  Dashboard
+                </Button>
+
+                {/* Academic Management Dropdown */}
+                <Box>
+                  <Button
+                    color="inherit"
+                    startIcon={<SchoolIcon />}
+                    onClick={handleMenuOpen}
+                  >
+                    Academic Management
+                  </Button>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate('/students');
+                      }}
+                    >
+                      <PeopleIcon sx={{ mr: 1 }} />
+                      Students
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate('/classes');
+                      }}
+                    >
+                      <ClassIcon sx={{ mr: 1 }} />
+                      Classes
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate('/sections');
+                      }}
+                    >
+                      <ViewWeekIcon sx={{ mr: 1 }} />
+                      Sections
+                    </MenuItem>
+                  </Menu>
+                </Box>
+
+                {/* Fee & Finance */}
+                <Button
+                  color="inherit"
+                  startIcon={<PaymentIcon />}
+                  component={NavLink}
+                  to="/fees"
+                >
+                  Fee & Finance
+                </Button>
+
+                {/* Transport Management */}
+                <Button
+                  color="inherit"
+                  startIcon={<DirectionsBusIcon />}
+                  component={NavLink}
+                  to="/auto"
+                >
+                  Transport Management
+                </Button>
+
                 <Button
                   variant="contained"
                   color="secondary"
@@ -206,46 +189,13 @@ const Navbar = () => {
                 >
                   Logout
                 </Button>
-              </>
+              </Box>
             )}
           </Toolbar>
         </AppBar>
       </HideOnScroll>
 
       <Toolbar sx={{ mb: 2 }} />
-
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        anchor="left"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            width: 280,
-            boxSizing: 'border-box',
-            bgcolor: 'background.paper',
-            boxShadow: 2,
-          },
-        }}
-      >
-        <Toolbar />
-        <Box
-          sx={{
-            overflow: 'auto',
-            px: 1,
-            '& .MuiListItem-root': {
-              borderRadius: 1,
-              mb: 0.5,
-              '&:hover': { bgcolor: 'action.hover' },
-            },
-          }}
-        >
-          {drawer}
-        </Box>
-      </Drawer>
     </>
   );
 };
