@@ -5,7 +5,6 @@ from typing import List
 from typing import Optional
 from uuid import UUID
 
-
 from pydantic import BaseModel, Field, validator
 
 from models import Month
@@ -139,6 +138,7 @@ class FeePaymentBase(BaseModel):
     tuition_fees: Decimal = Field(..., ge=0)
     auto_fees: Decimal = Field(..., ge=0)
     day_boarding_fees: Decimal = Field(..., ge=0)
+    receipt_number: Optional[str] = Field(None, min_length=1, max_length=20)
 
 
 class FeePaymentCreate(FeePaymentBase):
@@ -151,6 +151,7 @@ class FeePaymentUpdate(BaseModel):
     auto_fees: Optional[Decimal] = None
     day_boarding_fees: Optional[Decimal] = None
     student_id: Optional[UUID] = None
+    receipt_number: Optional[str] = None
 
 
 class FeePaymentResponse(FeePaymentBase):
@@ -158,6 +159,7 @@ class FeePaymentResponse(FeePaymentBase):
     student_id: UUID
     total_amount: Decimal
     transaction_date: datetime
+    receipt_number: Optional[str] = Field(None, min_length=0)
 
     class Config:
         orm_mode = True
@@ -261,6 +263,3 @@ class AutoWithStudentsListResponse(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-
