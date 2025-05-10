@@ -124,7 +124,7 @@ const Navbar = () => {
                     startIcon={<SchoolIcon />}
                     onClick={handleMenuOpen}
                   >
-                    Academic Management
+                    Academic
                   </Button>
                   <Menu
                     anchorEl={anchorEl}
@@ -168,7 +168,7 @@ const Navbar = () => {
                   component={NavLink}
                   to="/fees"
                 >
-                  Fee & Finance
+                  Finance
                 </Button>
 
                 {/* Transport Management */}
@@ -178,7 +178,7 @@ const Navbar = () => {
                   component={NavLink}
                   to="/auto"
                 >
-                  Transport Management
+                  Transport
                 </Button>
 
                 <Button

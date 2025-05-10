@@ -1,6 +1,6 @@
 const appConfig = {
   appName: "Dr. Jack Model School",
-  logo: "/logo1.jpg",
+  logo: "/drjackmodelschoollogo.jpg",
 };
 
 export default appConfig;

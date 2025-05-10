@@ -46,7 +46,8 @@ const FeeManager = () => {
     month: 'JAN',
     tuition_fees: '',
     auto_fees: '',
-    day_boarding_fees: ''
+    day_boarding_fees: '',
+    receipt_number: ''
   });
   const [stats, setStats] = useState({
     totalCollected: 0,
@@ -84,7 +85,8 @@ const FeeManager = () => {
         tuition_fees: parseFloat(payment.tuition_fees),
         auto_fees: parseFloat(payment.auto_fees),
         day_boarding_fees: parseFloat(payment.day_boarding_fees),
-        total_amount: parseFloat(payment.total_amount)
+        total_amount: parseFloat(payment.total_amount),
+        receipt_number:  payment.receipt_number,
       }));
       setPayments(transformedPayments);
     } catch (error) {
@@ -111,7 +113,8 @@ const FeeManager = () => {
         month: payment.month,
         tuition_fees: parseFloat(payment.tuition_fees).toString(),
         auto_fees: parseFloat(payment.auto_fees).toString(),
-        day_boarding_fees: parseFloat(payment.day_boarding_fees).toString()
+        day_boarding_fees: parseFloat(payment.day_boarding_fees).toString(),
+         receipt_number: payment.receipt_number || ''
       });
     } else {
       setSelectedPayment(null);
@@ -134,7 +137,8 @@ const FeeManager = () => {
       month: 'JAN',
       tuition_fees: '',
       auto_fees: '',
-      day_boarding_fees: ''
+      day_boarding_fees: '',
+      receipt_number: ''
     });
   };
 
@@ -154,7 +158,8 @@ const FeeManager = () => {
         month: formData.month,
         tuition_fees: parseInt(formData.tuition_fees) || 0,
         auto_fees: parseInt(formData.auto_fees) || 0,
-        day_boarding_fees: parseInt(formData.day_boarding_fees) || 0
+        day_boarding_fees: parseInt(formData.day_boarding_fees) || 0,
+        receipt_number: formData.receipt_number || '',
       };
 
       if (selectedPayment) {
@@ -312,6 +317,13 @@ const FeeManager = () => {
         maximumFractionDigits: 2
       })}`
     },
+    {
+      field: 'receipt_number',
+      headerName: 'Receipt No.',
+      width: 130,
+      valueFormatter: (params) => params.value?.toString() || ''
+    }
+    ,
     {
       field: 'total_amount',
       headerName: 'Total',
@@ -607,6 +619,15 @@ const FeeManager = () => {
                   onChange={handleInputChange}
                   required
                   inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth   
+                  label="Receipt Number"
+                  name="receipt_number"
+                  value={formData.receipt_number}
+                  onChange={handleInputChange}
                 />
               </Grid>
             </Grid>
