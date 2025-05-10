@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
   Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Box, Paper, Autocomplete
@@ -7,9 +6,6 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
 import PaymentIcon from '@mui/icons-material/Payment';
-import PendingIcon from '@mui/icons-material/Pending';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import axiosInstance from '../utils/axiosConfig';
 
 const MONTHS = [
