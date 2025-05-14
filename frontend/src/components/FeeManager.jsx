@@ -35,6 +35,8 @@ const FeeManager = () => {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [modalOpen, setModalOpen] = useState(false);
+  const [paymentDetailsOpen, setPaymentDetailsOpen] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [formData, setFormData] = useState({
@@ -103,6 +105,23 @@ const FeeManager = () => {
     }
   };
 
+  const fetchPaymentDetails = async (studentId) => {
+    try {
+      const response = await axiosInstance.get(`http://localhost:8000/fee_payments/student/${studentId}`);
+      const transformedDetails = response.data.map(payment => ({
+        ...payment,
+        tuition_fees: parseFloat(payment.tuition_fees),
+        auto_fees: parseFloat(payment.auto_fees),
+        day_boarding_fees: parseFloat(payment.day_boarding_fees || 0),
+        total_amount: parseFloat(payment.total_amount),
+      }));
+      setPaymentDetails(transformedDetails);
+      setPaymentDetailsOpen(true);
+    } catch (error) {
+      handleApiError(error, setAlert);
+    }
+  };
+
   const handleModalOpen = (payment = null) => {
     if (payment) {
       setSelectedPayment(payment);
@@ -139,6 +158,11 @@ const FeeManager = () => {
       day_boarding_fees: '',
       receipt_number: ''
     });
+  };
+
+  const handlePaymentDetailsClose = () => {
+    setPaymentDetailsOpen(false);
+    setPaymentDetails([]);
   };
 
   const handleInputChange = (e) => {
@@ -182,6 +206,10 @@ const FeeManager = () => {
         await axiosInstance.delete(`http://localhost:8000/fee_payments/${id}`);
         setAlert({ open: true, message: 'Payment deleted successfully!', severity: 'success' });
         fetchPayments();
+        // Refresh payment details
+        if (paymentDetailsOpen && paymentDetails.length) {
+          fetchPaymentDetails(paymentDetails[0].student_id);
+        }
       } catch (error) {
         handleApiError(error, setAlert);
       }
@@ -350,6 +378,88 @@ const FeeManager = () => {
             variant="contained"
             color="primary"
             size="small"
+            onClick={() => fetchPaymentDetails(params.row.student_id)}
+          >
+            View Payments
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const paymentDetailColumns = [
+    {
+      field: 'month',
+      headerName: 'Month',
+      width: 100
+    },
+    {
+      field: 'tuition_fees',
+      headerName: 'Tuition Fees',
+      width: 130,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'auto_fees',
+      headerName: 'Auto Fees',
+      width: 130,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'day_boarding_fees',
+      headerName: 'Day Boarding',
+      width: 130,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'receipt_number',
+      headerName: 'Receipt No.',
+      width: 130,
+      valueFormatter: (params) => params.value?.toString() || ''
+    },
+    {
+      field: 'total_amount',
+      headerName: 'Total',
+      width: 130,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'transaction_date',
+      headerName: 'Date',
+      width: 180,
+      valueFormatter: (params) => {
+        const date = new Date(params.value);
+        return date.toLocaleDateString('en-IN', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 200,
+      renderCell: (params) => (
+        <div>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
             onClick={() => handleModalOpen(params.row)}
             sx={{ mr: 1 }}
           >
@@ -505,6 +615,7 @@ const FeeManager = () => {
         />
       </Paper>
 
+      {/* Add/Edit Payment Dialog */}
       <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedPayment ? 'Edit Payment' : 'Add Payment'}
@@ -631,6 +742,38 @@ const FeeManager = () => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={paymentDetailsOpen} onClose={handlePaymentDetailsClose} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          Payment Details
+          <Button
+            onClick={handlePaymentDetailsClose}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            Close
+          </Button>
+        </DialogTitle>
+        <DialogContent>
+          <DataGrid
+            rows={paymentDetails}
+            columns={paymentDetailColumns}
+            pageSize={5}
+            rowsPerPageOptions={[5, 10, 20]}
+            disableSelectionOnClick
+            autoHeight
+            getRowId={(row) => row.id}
+            sx={{
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'action.hover'
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePaymentDetailsClose}>Close</Button>
+        </DialogActions>
       </Dialog>
 
       <Snackbar
