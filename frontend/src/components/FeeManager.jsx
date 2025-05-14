@@ -75,14 +75,16 @@ const FeeManager = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('http://localhost:8000/fee_payments/');
+      const response = await axiosInstance.get('http://localhost:8000/fee_payments/calculate_student_fees_summary/');
       const transformedPayments = response.data.map(payment => ({
         ...payment,
+        id: payment.student_id, // Use student_id as unique identifier
         tuition_fees: parseFloat(payment.tuition_fees),
         auto_fees: parseFloat(payment.auto_fees),
-        day_boarding_fees: parseFloat(payment.day_boarding_fees),
-        total_amount: parseFloat(payment.total_amount),
-        receipt_number:  payment.receipt_number,
+        day_boarding_fees: parseFloat(payment.day_boarding_fees || 0),
+        paid_amount: parseFloat(payment.paid_amount),
+        expected_amount: parseFloat(payment.expected_amount),
+        due_amount: parseFloat(payment.due_amount),
       }));
       setPayments(transformedPayments);
     } catch (error) {
@@ -106,11 +108,11 @@ const FeeManager = () => {
       setSelectedPayment(payment);
       setFormData({
         student_id: payment.student_id,
-        month: payment.month,
+        month: payment.month || 'JAN',
         tuition_fees: parseFloat(payment.tuition_fees).toString(),
         auto_fees: parseFloat(payment.auto_fees).toString(),
-        day_boarding_fees: parseFloat(payment.day_boarding_fees).toString(),
-         receipt_number: payment.receipt_number || ''
+        day_boarding_fees: parseFloat(payment.day_boarding_fees || 0).toString(),
+        receipt_number: payment.receipt_number || ''
       });
     } else {
       setSelectedPayment(null);
@@ -119,7 +121,8 @@ const FeeManager = () => {
         month: 'JAN',
         tuition_fees: '',
         auto_fees: '',
-        day_boarding_fees: ''
+        day_boarding_fees: '',
+        receipt_number: ''
       });
     }
     setModalOpen(true);
@@ -203,8 +206,7 @@ const FeeManager = () => {
   };
 
   const filteredPayments = payments.filter(payment => {
-    const student = students.find(s => s.id === payment.student_id);
-    const searchString = (student?.name || '').toLowerCase();
+    const searchString = (payment.student_name || '').toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
@@ -214,16 +216,16 @@ const FeeManager = () => {
       const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
       const currentYear = currentDate.getFullYear();
 
-      // Filter payments for current month
+      // Note: Since the new API doesn't provide transaction_date, we'll use enrollment_date
       const currentMonthPayments = payments.filter(payment => {
-        const paymentDate = new Date(payment.transaction_date);
+        const paymentDate = new Date(payment.enrollment_date);
         return paymentDate.getMonth() + 1 === currentMonth && 
                paymentDate.getFullYear() === currentYear;
       });
 
       // Calculate current month stats
       const currentMonthStats = {
-        totalCollected: currentMonthPayments.reduce((sum, payment) => sum + payment.total_amount, 0),
+        totalCollected: currentMonthPayments.reduce((sum, payment) => sum + payment.paid_amount, 0),
         tuitionFees: currentMonthPayments.reduce((sum, payment) => sum + payment.tuition_fees, 0),
         autoFees: currentMonthPayments.reduce((sum, payment) => sum + payment.auto_fees, 0),
         dayBoardingFees: currentMonthPayments.reduce((sum, payment) => sum + payment.day_boarding_fees, 0)
@@ -231,7 +233,7 @@ const FeeManager = () => {
 
       // Calculate all time stats
       const allTimeStats = {
-        totalCollected: payments.reduce((sum, payment) => sum + payment.total_amount, 0),
+        totalCollected: payments.reduce((sum, payment) => sum + payment.paid_amount, 0),
         tuitionFees: payments.reduce((sum, payment) => sum + payment.tuition_fees, 0),
         autoFees: payments.reduce((sum, payment) => sum + payment.auto_fees, 0),
         dayBoardingFees: payments.reduce((sum, payment) => sum + payment.day_boarding_fees, 0)
@@ -244,15 +246,9 @@ const FeeManager = () => {
       });
 
       // Update existing stats
-      const paidStudents = new Set(payments.map(payment => payment.student_id)).size;
+      const paidStudents = new Set(payments.filter(p => p.paid_amount > 0).map(payment => payment.student_id)).size;
       const defaulters = students.length - paidStudents;
-      const pendingFees = students.reduce((sum, student) => {
-        const totalFees = student.tuition_fees + student.auto_fees + student.day_boarding_fees;
-        const paid = payments
-          .filter(payment => payment.student_id === student.id)
-          .reduce((sum, payment) => sum + payment.total_amount, 0);
-        return sum + (totalFees - paid);
-      }, 0);
+      const pendingFees = payments.reduce((sum, payment) => sum + payment.due_amount, 0);
 
       setStats({
         totalCollected: allTimeStats.totalCollected,
@@ -276,15 +272,6 @@ const FeeManager = () => {
       field: 'student_name',
       headerName: 'Student',
       width: 200,
-      valueGetter: (params) => {
-        const student = students.find(s => s.id === params.row.student_id);
-        return student ? student.name : '';
-      }
-    },
-    {
-      field: 'month',
-      headerName: 'Month',
-      width: 100
     },
     {
       field: 'tuition_fees',
@@ -314,15 +301,8 @@ const FeeManager = () => {
       })}`
     },
     {
-      field: 'receipt_number',
-      headerName: 'Receipt No.',
-      width: 130,
-      valueFormatter: (params) => params.value?.toString() || ''
-    }
-    ,
-    {
-      field: 'total_amount',
-      headerName: 'Total',
+      field: 'paid_amount',
+      headerName: 'Paid Amount',
       width: 130,
       valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
         minimumFractionDigits: 2,
@@ -330,17 +310,33 @@ const FeeManager = () => {
       })}`
     },
     {
-      field: 'transaction_date',
-      headerName: 'Date',
+      field: 'expected_amount',
+      headerName: 'Expected Amount',
+      width: 150,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'due_amount',
+      headerName: 'Due Amount',
+      width: 130,
+      valueFormatter: (params) => `₹${parseFloat(params.value).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`
+    },
+    {
+      field: 'enrollment_date',
+      headerName: 'Enrollment Date',
       width: 180,
       valueFormatter: (params) => {
         const date = new Date(params.value);
         return date.toLocaleDateString('en-IN', {
           year: 'numeric',
           month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: 'numeric'
         });
       }
     },
