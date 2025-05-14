@@ -86,6 +86,7 @@ class StudentResponse(StudentBase):
     class_id: UUID
     section_id: UUID
     academic_year_id: UUID
+    status: str
 
     class Config:
         orm_mode = True

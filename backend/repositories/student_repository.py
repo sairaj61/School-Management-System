@@ -50,6 +50,7 @@ class StudentRepository:
             "class_id": str(student.class_id),
             "section_id": str(student.section_id),
             "academic_year_id": str(student.academic_year_id),
+            "status": student.status,
             "day_boarding_fees": current_day_boarding_fee
         }
         return data
