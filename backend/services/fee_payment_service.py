@@ -54,3 +54,9 @@ class FeePaymentService:
             return summaries
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    async def get_payments_by_student(self, student_id: UUID):
+        payments = await self.payment_repo.get_payments_by_student_id(student_id)
+        if not payments:
+            raise HTTPException(status_code=404, detail="No fee payments found for the student")
+        return payments

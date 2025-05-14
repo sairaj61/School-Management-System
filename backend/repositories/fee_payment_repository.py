@@ -159,3 +159,12 @@ class FeePaymentRepository:
             })
 
         return summaries
+
+    async def get_payments_by_student_id(self, student_id: UUID):
+        result = await self.db.execute(
+            select(FeePayment)
+            .options(joinedload(FeePayment.student))
+            .where(FeePayment.student_id == student_id)
+            .order_by(FeePayment.transaction_date.desc())
+        )
+        return result.scalars().all()
