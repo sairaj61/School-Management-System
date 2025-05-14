@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from models import Student
+from models import Student, DayBoardingHistory
 from schemas import StudentCreate, StudentUpdate
 from fastapi import HTTPException
 from uuid import UUID
@@ -28,26 +30,29 @@ class StudentRepository:
                 if history.end_date is None:
                     current_day_boarding_fee = str(history.day_boarding_fees)
                     break
-            print("day_boarding_fee", current_day_boarding_fee)
-            data = {
-                "id": str(student.id),
-                "name": student.name,
-                "roll_number": student.roll_number,
-                "father_name": student.father_name,
-                "mother_name": student.mother_name,
-                "date_of_birth": student.date_of_birth,
-                "contact": student.contact,
-                "address": student.address,
-                "enrollment_date": student.enrollment_date,
-                "tuition_fees": str(student.tuition_fees),
-                "auto_fees": str(student.auto_fees),
-                "class_id": str(student.class_id),
-                "section_id": str(student.section_id),
-                "academic_year_id": str(student.academic_year_id),
-                "day_boarding_fees": current_day_boarding_fee
-            }
+            data = await self.getStudentResponse(current_day_boarding_fee, student)
             response.append(data)
         return response
+
+    async def getStudentResponse(self, current_day_boarding_fee, student):
+        data = {
+            "id": str(student.id),
+            "name": student.name,
+            "roll_number": student.roll_number,
+            "father_name": student.father_name,
+            "mother_name": student.mother_name,
+            "date_of_birth": student.date_of_birth,
+            "contact": student.contact,
+            "address": student.address,
+            "enrollment_date": student.enrollment_date,
+            "tuition_fees": str(student.tuition_fees),
+            "auto_fees": str(student.auto_fees),
+            "class_id": str(student.class_id),
+            "section_id": str(student.section_id),
+            "academic_year_id": str(student.academic_year_id),
+            "day_boarding_fees": current_day_boarding_fee
+        }
+        return data
 
     async def get_by_id(self, student_id: UUID):
         result = await self.db.execute(select(Student).filter(Student.id == student_id))
@@ -67,7 +72,6 @@ class StudentRepository:
         return result.scalar_one_or_none()
 
     async def create(self, student: StudentCreate):
-        # Check for duplicate roll number only if one is provided
         if student.roll_number:
             existing_student = await self.get_by_roll_number_in_class(student.roll_number, student.class_id)
             if existing_student:
@@ -77,11 +81,22 @@ class StudentRepository:
                 )
 
         try:
-            db_student = Student(**student.dict())
+            db_student = Student(**student.dict(exclude={"day_boarding_fees"}))
             self.db.add(db_student)
+            await self.db.flush()  # ensures student.id is populated before creating history
+
+            # Create day boarding history entry
+            day_boarding = DayBoardingHistory(
+                student_id=db_student.id,
+                day_boarding_fees=student.day_boarding_fees,
+                start_date=datetime.utcnow(),
+                end_date=None
+            )
+            self.db.add(day_boarding)
+
             await self.db.commit()
             await self.db.refresh(db_student)
-            return db_student
+            return await self.getStudentResponse(student.day_boarding_fees, db_student)
         except IntegrityError:
             await self.db.rollback()
             raise HTTPException(
