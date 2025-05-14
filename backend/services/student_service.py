@@ -71,3 +71,6 @@ class StudentService:
 
     async def get_students_by_section(self, section_id: UUID):
         return await self.student_repo.get_by_section(section_id)
+
+    def student_dropout(self, student_id):
+        return self.student_repo.student_dropout(student_id)

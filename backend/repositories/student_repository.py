@@ -2,10 +2,10 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
-from models import Student, DayBoardingHistory
+from models import Student, DayBoardingHistory, StudentStatus
 from schemas import StudentCreate, StudentUpdate
 from fastapi import HTTPException
 from uuid import UUID
@@ -175,3 +175,22 @@ class StudentRepository:
     async def get_by_section(self, section_id: UUID):
         result = await self.db.execute(select(Student).filter(Student.section_id == section_id))
         return result.scalars().all()
+
+    async def student_dropout(self, student_id: UUID):
+        try:
+            db_student = await self.get_by_id(student_id)
+            if not db_student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
+            db_student.status = StudentStatus.DROPPED_OFF.value  # Use enum value
+
+            await self.db.commit()
+            await self.db.refresh(db_student)
+            return db_student
+
+        except SQLAlchemyError as e:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while dropping out the student: {str(e)}"
+            )
