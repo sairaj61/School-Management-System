@@ -54,8 +54,12 @@ class StudentRepository:
         }
         return data
 
-    async def get_by_id(self, student_id: UUID):
-        result = await self.db.execute(select(Student).filter(Student.id == student_id))
+    async def get_by_id(self, student_id: UUID, load_history: bool = False):
+        query = select(Student).filter(Student.id == student_id)
+        if load_history:
+            query = query.options(selectinload(Student.day_boarding_history))
+
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_roll_number(self, roll_number: str):
@@ -105,16 +109,12 @@ class StudentRepository:
             )
 
     async def update(self, student_id: UUID, student: StudentUpdate):
-        db_student = await self.get_by_id(student_id)
+        db_student = await self.get_by_id(student_id, load_history=True)
         if not db_student:
             return None
 
-        # Check for duplicate roll number only if it's being updated
         if student.roll_number:
-            # If class is also being updated, use new class_id, otherwise use existing
             check_class = student.class_id if student.class_id else db_student.class_id
-
-            # Check for duplicates only if roll number is different
             if student.roll_number != db_student.roll_number:
                 existing_student = await self.get_by_roll_number_in_class(student.roll_number, check_class)
                 if existing_student and existing_student.id != student_id:
@@ -124,13 +124,35 @@ class StudentRepository:
                     )
 
         try:
-            update_data = student.dict(exclude_unset=True)
+            update_data = student.dict(exclude_unset=True, exclude={"day_boarding_fees"})
             for key, value in update_data.items():
                 setattr(db_student, key, value)
 
+            # Handle day_boarding_fees update
+            if student.day_boarding_fees is not None:
+                current_fee = None
+                for history in db_student.day_boarding_history:
+                    if history.end_date is None:
+                        current_fee = history
+                        break
+
+                if not current_fee or current_fee.day_boarding_fees != student.day_boarding_fees:
+                    # End current fee if exists
+                    if current_fee:
+                        current_fee.end_date = datetime.utcnow()
+
+                    # Add new history record
+                    new_fee = DayBoardingHistory(
+                        student_id=db_student.id,
+                        day_boarding_fees=student.day_boarding_fees,
+                        start_date=datetime.utcnow(),
+                        end_date=None
+                    )
+                    self.db.add(new_fee)
+
             await self.db.commit()
             await self.db.refresh(db_student)
-            return db_student
+            return await self.getStudentResponse(student.day_boarding_fees, db_student)
         except IntegrityError:
             await self.db.rollback()
             raise HTTPException(
