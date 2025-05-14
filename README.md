@@ -86,6 +86,10 @@ A scalable system for managing school students, classes, sections, fees, and car
      ```bash
      uvicorn main:app --host 0.0.0.0 --port 8000
      ```
+     ```
+     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+``
    - The backend will be available at `http://localhost:8000`.
 
 3. **Set Up the Frontend**:

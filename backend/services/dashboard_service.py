@@ -8,7 +8,6 @@ class DashboardService:
         self.student_repo = StudentRepository(db)
         self.payment_repo = FeePaymentRepository(db)
 
-    # filepath: d:\learning\School-Management-System\backend\services\dashboard_service.py
     async def get_dashboard(self) -> DashboardResponse:
         # Fetch total students
         total_students = len(await self.student_repo.get_all())
@@ -40,3 +39,12 @@ class DashboardService:
             total_dues=total_dues,
             students_with_payments=students_with_payments
         )
+
+
+#     get to 10 or n non paying student by all time /by month /by three months -> 10 will be by default
+#  Cal clulated current moth loss or profit /all time loss or profit
+# add column in the student -> status -> active/droppoff /
+# add status /created by /updated by /updated data /created date column in all table
+#  staus will be active /archived /deleted -> in case of archived -> will be droffof for student
+# add day boarting starting date and ennding date
+# may create a new screen to manage dayboarding

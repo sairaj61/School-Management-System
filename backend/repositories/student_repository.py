@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
+
 from models import Student
 from schemas import StudentCreate, StudentUpdate
 from fastapi import HTTPException
@@ -12,8 +14,40 @@ class StudentRepository:
         self.db = db
 
     async def get_all(self):
-        result = await self.db.execute(select(Student))
-        return result.scalars().all()
+        result = await self.db.execute(
+            select(Student)
+            .options(selectinload(Student.day_boarding_history))
+        )
+        students = result.scalars().all()
+
+        response = []
+        for student in students:
+            current_day_boarding_fee = 0.0
+            # Find the current day boarding fee (where end_date is None)
+            for history in student.day_boarding_history:
+                if history.end_date is None:
+                    current_day_boarding_fee = str(history.day_boarding_fees)
+                    break
+            print("day_boarding_fee", current_day_boarding_fee)
+            data = {
+                "id": str(student.id),
+                "name": student.name,
+                "roll_number": student.roll_number,
+                "father_name": student.father_name,
+                "mother_name": student.mother_name,
+                "date_of_birth": student.date_of_birth,
+                "contact": student.contact,
+                "address": student.address,
+                "enrollment_date": student.enrollment_date,
+                "tuition_fees": str(student.tuition_fees),
+                "auto_fees": str(student.auto_fees),
+                "class_id": str(student.class_id),
+                "section_id": str(student.section_id),
+                "academic_year_id": str(student.academic_year_id),
+                "day_boarding_fees": current_day_boarding_fee
+            }
+            response.append(data)
+        return response
 
     async def get_by_id(self, student_id: UUID):
         result = await self.db.execute(select(Student).filter(Student.id == student_id))
