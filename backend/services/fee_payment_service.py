@@ -2,9 +2,15 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
+from models import Student
 from repositories.fee_payment_repository import FeePaymentRepository
 from repositories.student_repository import StudentRepository
 from schemas import FeePaymentCreate, FeePaymentUpdate
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+from datetime import datetime
+from calendar import monthrange
+from decimal import Decimal
 
 
 class FeePaymentService:
@@ -39,3 +45,12 @@ class FeePaymentService:
         if not deleted_payment:
             raise HTTPException(status_code=404, detail="Fee payment not found")
         return {"message": "Fee payment deleted"}
+
+    async def calculate_student_fees_summary(self):
+        try:
+            summaries = await self.payment_repo.calculate_student_fees_summary()
+            if not summaries:
+                raise HTTPException(status_code=404, detail="No students or fee records found")
+            return summaries
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

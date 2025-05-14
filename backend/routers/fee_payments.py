@@ -16,6 +16,12 @@ async def get_fee_payments(db=Depends(get_db), user: User = Depends(current_acti
     return await service.get_all_payments()
 
 
+@router.get("/calculate_student_fees_summary/")
+async def calculate_student_fees_summary(db=Depends(get_db), user: User = Depends(current_active_user)):
+    service = FeePaymentService(db)
+    return await service.calculate_student_fees_summary()
+
+
 @router.post("/", response_model=FeePaymentResponse)
 async def create_fee_payment(payment: FeePaymentCreate, db=Depends(get_db),
                              user: User = Depends(current_active_user)):
