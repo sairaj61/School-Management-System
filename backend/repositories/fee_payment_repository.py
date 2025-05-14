@@ -151,6 +151,7 @@ class FeePaymentRepository:
                 "student_name": student.name,
                 "tuition_fees": float(student.tuition_fees),
                 "auto_fees": float(student.auto_fees),
+                "enrollment_date": student.enrollment_date,
                 "day_boarding_fees": ", ".join(map(str, monthly_day_boarding.values())),
                 "paid_amount": float(paid_total),
                 "expected_amount": float(expected_total),
