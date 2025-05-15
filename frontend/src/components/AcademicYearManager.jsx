@@ -23,6 +23,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
 import SchoolIcon from '@mui/icons-material/School';
+import EditIcon from '@mui/icons-material/Edit';
 
 const AcademicYearManager = () => {
   const [academicYears, setAcademicYears] = useState([]);
@@ -168,9 +169,19 @@ const AcademicYearManager = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 250,
+      width: 300,
       renderCell: (params) => (
         <div>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => handleModalOpen(params.row)}
+            sx={{ mr: 1 }}
+            startIcon={<EditIcon />}
+          >
+            Edit
+          </Button>
           <Button
             variant="contained"
             color={params.row.status === 'ACTIVE' ? 'warning' : 'success'}
