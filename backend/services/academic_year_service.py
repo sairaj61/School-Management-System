@@ -10,7 +10,7 @@ class AcademicYearService:
 
     async def get_all_academic_years(self):
         all_years = await self.academic_year_repo.get_all()
-        active_years = [year for year in all_years if year.is_active]
+        active_years = [year for year in all_years if year.status == "ACTIVE" or year.status == "ARCHIVED"]
         return active_years
 
     async def get_academic_year_by_id(self, year_id: UUID):

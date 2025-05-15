@@ -31,7 +31,7 @@ class AcademicYearRepository:
             raise HTTPException(status_code=400, detail=f"Academic year '{academic_year.year}' already exists")
 
         try:
-            db_academic_year = AcademicYear(**academic_year.dict(), is_active=True)
+            db_academic_year = AcademicYear(**academic_year.dict(), status="ACTIVE")
             await self.deactivate_all_years()
             self.db.add(db_academic_year)
             await self.db.commit()
@@ -76,26 +76,51 @@ class AcademicYearRepository:
         return db_academic_year
 
     async def deactivate_all_years(self):
-        await self.db.execute(update(AcademicYear).values(is_active=False))
+        await self.db.execute(
+            update(AcademicYear)
+            .where(AcademicYear.status != "DELETED")
+            .values(status="ARCHIVED")
+        )
         await self.db.commit()
 
     async def activate_year(self, year_id: UUID):
         db_academic_year = await self.get_by_id(year_id)
         if not db_academic_year:
             raise HTTPException(status_code=404, detail="Academic year not found")
-        await self.deactivate_all_years()
-        db_academic_year.is_active = True
-        await self.db.commit()
-        await self.db.refresh(db_academic_year)
+
+        if db_academic_year.status == "DELETED":
+            raise HTTPException(status_code=400, detail="Cannot activate a deleted academic year")
+
+        if db_academic_year.status != "ACTIVE":
+            await self.deactivate_all_years()
+            db_academic_year.status = "ACTIVE"
+            await self.db.commit()
+            await self.db.refresh(db_academic_year)
+
         return db_academic_year
 
     async def deactivate_year(self, year_id: UUID):
         db_academic_year = await self.get_by_id(year_id)
         if not db_academic_year:
             raise HTTPException(status_code=404, detail="Academic year not found")
-        if not db_academic_year.is_active:
+
+        if db_academic_year.status != "ACTIVE":
             raise HTTPException(status_code=400, detail="Academic year is already inactive")
-        db_academic_year.is_active = False
+
+        # Check if it's the only active year
+        result = await self.db.execute(
+            select(AcademicYear).where(AcademicYear.status == "ACTIVE")
+        )
+        active_years = result.scalars().all()
+
+        if len(active_years) <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one academic year must remain active"
+            )
+
+        db_academic_year.status = "ARCHIVED"
         await self.db.commit()
         await self.db.refresh(db_academic_year)
         return db_academic_year
+

@@ -38,7 +38,7 @@ class AcademicYearUpdate(AcademicYearBase):
 
 class AcademicYear(AcademicYearBase):
     id: UUID
-    is_active: bool
+    status: str
 
     class Config:
         orm_mode = True
