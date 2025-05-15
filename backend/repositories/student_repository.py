@@ -1,15 +1,16 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from fastapi import HTTPException
+from sqlalchemy import and_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models import Student, DayBoardingHistory, StudentStatus
+from models import Student, DayBoardingHistory, AcademicYear
+from models import StudentStatus
 from schemas import StudentCreate, StudentUpdate
-from fastapi import HTTPException
-from uuid import UUID
 
 
 class StudentRepository:
@@ -95,13 +96,14 @@ class StudentRepository:
             await self.db.flush()  # ensures student.id is populated before creating history
 
             # Create day boarding history entry
-            day_boarding = DayBoardingHistory(
-                student_id=db_student.id,
-                day_boarding_fees=student.day_boarding_fees,
-                start_date=datetime.utcnow(),
-                end_date=None
-            )
-            self.db.add(day_boarding)
+            if student.day_boarding_fees is not None and student.day_boarding_fees > 0:
+                day_boarding = DayBoardingHistory(
+                    student_id=db_student.id,
+                    day_boarding_fees=student.day_boarding_fees,
+                    start_date=datetime.utcnow(),
+                    end_date=None
+                )
+                self.db.add(day_boarding)
 
             await self.db.commit()
             await self.db.refresh(db_student)
@@ -198,3 +200,30 @@ class StudentRepository:
                 status_code=500,
                 detail=f"Error updating student status: {str(e)}"
             )
+
+    async def get_day_boarding_students_for_current_year(self, current_academic_year_id: UUID):
+        query = select(Student).options(selectinload(Student.day_boarding_history)).where(
+            Student.academic_year_id == current_academic_year_id,
+            Student.status == StudentStatus.ACTIVE.value
+        )
+        result = await self.db.execute(query)
+        students = result.scalars().all()
+
+        response = []
+        for student in students:
+            for history in student.day_boarding_history:
+                if history.end_date is None:  # current active history
+                    response.append({
+                        "id": student.id,
+                        "name": student.name,
+                        "roll_number": student.roll_number,
+                        "class_id": student.class_id,
+                        "section_id": student.section_id,
+                        "academic_year_id": student.academic_year_id,
+                        "status": student.status,
+                        "day_boarding_fees": str(history.day_boarding_fees),
+                        "day_boarding_start_date": str(history.start_date),
+                        "day_boarding_end_date": str(history.end_date)
+                    })
+                    break
+        return response

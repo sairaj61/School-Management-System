@@ -76,3 +76,6 @@ class StudentService:
 
     async def update_student_status(self, student_id: UUID, status: StudentStatus):
         return await self.student_repo.update_student_status(student_id, status)
+
+    async def get_day_boarding_students(self, current_academic_year_id: UUID):
+        return await self.student_repo.get_day_boarding_students_for_current_year(current_academic_year_id)

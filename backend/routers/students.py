@@ -6,7 +6,7 @@ from auth.auth_model import User
 from auth.auth_service import current_active_user
 from models import StudentStatus
 from services.student_service import StudentService
-from schemas import StudentCreate, StudentUpdate, StudentResponse
+from schemas import StudentCreate, StudentUpdate, StudentResponse, DayBoardingStudentResponse
 from database import get_db
 from uuid import UUID
 
@@ -15,12 +15,22 @@ router = APIRouter()
 
 @router.get("/", response_model=list[StudentResponse])
 async def get_students(
-    status: Optional[StudentStatus] = Query(None),
-    db=Depends(get_db),
-    user: User = Depends(current_active_user)
+        status: Optional[StudentStatus] = Query(None),
+        db=Depends(get_db),
+        user: User = Depends(current_active_user)
 ):
     service = StudentService(db)
     return await service.get_all_students(status=status)
+
+
+@router.get("/day-boarding", response_model=list[DayBoardingStudentResponse])
+async def get_day_boarding_students(
+    academic_year_id: UUID = Query(...),
+    db=Depends(get_db),
+    user=Depends(current_active_user)
+):
+    service = StudentService(db)
+    return await service.get_day_boarding_students(current_academic_year_id=academic_year_id)
 
 
 @router.post("/", response_model=StudentResponse)
@@ -38,10 +48,10 @@ async def update_student(student_id: UUID, student: StudentUpdate, db=Depends(ge
 
 @router.put("/status/{student_id}")
 async def update_student_status(
-    student_id: UUID,
-    status: StudentStatus = Query(..., description="New status for the student"),
-    db=Depends(get_db),
-    user: User = Depends(current_active_user)
+        student_id: UUID,
+        status: StudentStatus = Query(..., description="New status for the student"),
+        db=Depends(get_db),
+        user: User = Depends(current_active_user)
 ):
     service = StudentService(db)
     return await service.update_student_status(student_id, status)

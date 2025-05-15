@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from typing import List
 from typing import Optional
@@ -90,6 +90,19 @@ class StudentResponse(StudentBase):
 
     class Config:
         orm_mode = True
+
+
+class DayBoardingStudentResponse(BaseModel):
+    id: UUID
+    name: str
+    roll_number: Optional[str]
+    class_id: Optional[UUID]
+    section_id: Optional[UUID]
+    academic_year_id: Optional[UUID]
+    status: str
+    day_boarding_fees: str
+    day_boarding_start_date: Optional[str]
+    day_boarding_end_date: Optional[str]
 
 
 class ClassBase(BaseModel):
