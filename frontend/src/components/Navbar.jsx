@@ -24,6 +24,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import SchoolIcon from '@mui/icons-material/School';
 import appConfig from '../config/appConfig'; // Import the config file
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 function HideOnScroll(props) {
   const { children } = props;
@@ -157,6 +158,15 @@ const Navbar = () => {
                     >
                       <ViewWeekIcon sx={{ mr: 1 }} />
                       Sections
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate('/academic-years');
+                      }}
+                    >
+                      <CalendarTodayIcon sx={{ mr: 1 }} />
+                      Academic Years
                     </MenuItem>
                   </Menu>
                 </Box>
