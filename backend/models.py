@@ -65,7 +65,6 @@ class AcademicYear(Base, AuditMixin):
     __tablename__ = "academic_years"
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_time_based_uuid)
     year = Column(String, unique=True, index=True)
-    is_active = Column(Boolean, default=False)
 
     students = relationship("Student", back_populates="academic_year")
     classes = relationship("Class", back_populates="academic_year")

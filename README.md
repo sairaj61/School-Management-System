@@ -122,7 +122,7 @@ A scalable system for managing school students, classes, sections, fees, and car
    - Sample data (1 class, 1 section, 1 fee structure) is preloaded on first run.
 
 ## Troubleshooting
-
+alembic revision --autogenerate -m "remove is active fromacademic"
 ### General Issues
 - **Backend Errors**:
   - Ensure Python 3.11+ is installed (`python --version`).
