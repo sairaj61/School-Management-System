@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -15,11 +16,13 @@ class StudentRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_all(self):
-        result = await self.db.execute(
-            select(Student)
-            .options(selectinload(Student.day_boarding_history))
-        )
+    async def get_all(self, status: Optional[StudentStatus] = None):
+        query = select(Student).options(selectinload(Student.day_boarding_history))
+
+        if status:
+            query = query.where(Student.status == status)
+
+        result = await self.db.execute(query)
         students = result.scalars().all()
 
         response = []
@@ -32,6 +35,7 @@ class StudentRepository:
                     break
             data = await self.getStudentResponse(current_day_boarding_fee, student)
             response.append(data)
+
         return response
 
     async def getStudentResponse(self, current_day_boarding_fee, student):

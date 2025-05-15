@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
 
 from auth.auth_model import User
 from auth.auth_service import current_active_user
+from models import StudentStatus
 from services.student_service import StudentService
 from schemas import StudentCreate, StudentUpdate, StudentResponse
 from database import get_db
@@ -11,9 +14,13 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[StudentResponse])
-async def get_students(db=Depends(get_db), user: User = Depends(current_active_user)):
+async def get_students(
+    status: Optional[StudentStatus] = Query(None),
+    db=Depends(get_db),
+    user: User = Depends(current_active_user)
+):
     service = StudentService(db)
-    return await service.get_all_students()
+    return await service.get_all_students(status=status)
 
 
 @router.post("/", response_model=StudentResponse)

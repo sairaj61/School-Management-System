@@ -1,8 +1,10 @@
 from decimal import Decimal
+from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
 
+from models import StudentStatus
 from repositories.class_repository import ClassRepository
 from repositories.section_repository import SectionRepository
 from repositories.student_repository import StudentRepository
@@ -15,8 +17,8 @@ class StudentService:
         self.class_repo = ClassRepository(db)
         self.section_repo = SectionRepository(db)
 
-    async def get_all_students(self):
-        return await self.student_repo.get_all()
+    async def get_all_students(self, status: Optional[StudentStatus] = None):
+        return await self.student_repo.get_all(status=status)
 
     async def get_student(self, student_id: UUID):
         student = await self.student_repo.get_by_id(student_id)
