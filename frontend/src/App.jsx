@@ -9,6 +9,7 @@ import ClassManager from './components/ClassManager';
 import SectionManager from './components/SectionManager';
 import FeeManager from './components/FeeManager';
 import AutoManager from './components/AutoManager';
+import AcademicYearManager from './components/AcademicYearManager';
 
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -51,6 +52,7 @@ const AuthenticatedApp = ({ onLogout }) => {
         <Route path="/sections" element={<SectionManager />} />
         <Route path="/fees" element={<FeeManager />} />
         <Route path="/auto" element={<AutoManager />} />
+        <Route path="/academic-years" element={<AcademicYearManager />} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </>
