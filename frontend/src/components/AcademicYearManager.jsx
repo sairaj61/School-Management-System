@@ -122,10 +122,14 @@ const AcademicYearManager = () => {
   };
 
   const handleStatusChange = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'ACTIVE' ? 'ARCHIVED' : 'ACTIVE';
+    const endpoint = currentStatus === 'ACTIVE' 
+      ? `http://localhost:8000/academic-years/${id}/deactivate`
+      : `http://localhost:8000/academic-years/${id}/activate`;
+    const action = currentStatus === 'ACTIVE' ? 'deactivated' : 'activated';
+    
     try {
-      await axiosInstance.patch(`http://localhost:8000/academic-years/${id}`, { status: newStatus });
-      setAlert({ open: true, message: `Academic Year ${newStatus.toLowerCase()} successfully!`, severity: 'success' });
+      await axiosInstance.post(endpoint);
+      setAlert({ open: true, message: `Academic Year ${action} successfully!`, severity: 'success' });
       fetchAcademicYears();
     } catch (error) {
       handleApiError(error, setAlert);
@@ -175,7 +179,7 @@ const AcademicYearManager = () => {
             sx={{ mr: 1 }}
             startIcon={params.row.status === 'ACTIVE' ? <ArchiveIcon /> : <UnarchiveIcon />}
           >
-            {params.row.status === 'ACTIVE' ? 'Archive' : 'Activate'}
+            {params.row.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
           </Button>
           <Button
             variant="contained"
