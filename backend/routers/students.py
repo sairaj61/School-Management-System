@@ -36,11 +36,15 @@ async def update_student(student_id: UUID, student: StudentUpdate, db=Depends(ge
     return await service.update_student(student_id, student)
 
 
-@router.put("drop_out/{student_id}")
-async def update_student(student_id: UUID, db=Depends(get_db),
-                         user: User = Depends(current_active_user)):
+@router.put("/status/{student_id}")
+async def update_student_status(
+    student_id: UUID,
+    status: StudentStatus = Query(..., description="New status for the student"),
+    db=Depends(get_db),
+    user: User = Depends(current_active_user)
+):
     service = StudentService(db)
-    return await service.student_dropout(student_id)
+    return await service.update_student_status(student_id, status)
 
 
 @router.delete("/{student_id}")

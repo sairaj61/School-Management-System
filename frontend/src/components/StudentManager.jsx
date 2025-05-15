@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
   Container, Typography, TextField, Button, MenuItem, Grid, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent
+  Dialog, DialogTitle, DialogContent, DialogActions, Box, Paper, Card, CardContent, Tabs, Tab
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { handleApiError } from '../utils/errorHandler';
 import axiosInstance from '../utils/axiosConfig';
+import ArchiveIcon from '@mui/icons-material/Archive';
+import UnarchiveIcon from '@mui/icons-material/Unarchive';
 
 const StudentManager = () => {
   const [students, setStudents] = useState([]);
@@ -17,6 +19,7 @@ const StudentManager = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [tabValue, setTabValue] = useState('ACTIVE'); // State for tabs
   const [formData, setFormData] = useState({
     name: '',
     roll_number: '',
@@ -34,7 +37,6 @@ const StudentManager = () => {
     academic_year_id: ''
   });
 
-  // Add new state for statistics
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalClasses: 0,
@@ -43,13 +45,12 @@ const StudentManager = () => {
   });
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(tabValue);
     fetchClasses();
     fetchAcademicYears();
     fetchAllSections();
-  }, []);
+  }, [tabValue]);
 
-  // Update stats when data changes
   useEffect(() => {
     setStats({
       totalStudents: students.length,
@@ -59,10 +60,10 @@ const StudentManager = () => {
     });
   }, [students, classes, sections]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (status) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('http://localhost:8000/students/');
+      const response = await axiosInstance.get(`http://localhost:8000/students/?status=${status}`);
       setStudents(response.data);
     } catch (error) {
       handleApiError(error, setAlert);
@@ -220,7 +221,7 @@ const StudentManager = () => {
       }
 
       handleModalClose();
-      fetchStudents();
+      fetchStudents(tabValue);
     } catch (error) {
       handleApiError(error, setAlert);
     }
@@ -231,10 +232,22 @@ const StudentManager = () => {
       try {
         await axiosInstance.delete(`http://localhost:8000/students/${id}`);
         setAlert({ open: true, message: 'Student deleted successfully!', severity: 'success' });
-        fetchStudents();
+        fetchStudents(tabValue);
       } catch (error) {
         handleApiError(error, setAlert);
       }
+    }
+  };
+
+  const handleStatusChange = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'ACTIVE' ? 'DROPPED_OUT' : 'ACTIVE';
+    const action = currentStatus === 'ACTIVE' ? 'dropped out' : 'activated';
+    try {
+      await axiosInstance.put(`http://localhost:8000/students/status/${id}?status=${newStatus}`);
+      setAlert({ open: true, message: `Student ${action} successfully!`, severity: 'success' });
+      fetchStudents(tabValue);
+    } catch (error) {
+      handleApiError(error, setAlert);
     }
   };
 
@@ -274,7 +287,7 @@ const StudentManager = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 300,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -284,6 +297,15 @@ const StudentManager = () => {
             onClick={() => handleModalOpen(params.row)}
           >
             Edit
+          </Button>
+          <Button
+            variant="contained"
+            color={params.row.status === 'ACTIVE' ? 'warning' : 'success'}
+            size="small"
+            onClick={() => handleStatusChange(params.row.id, params.row.status)}
+            startIcon={params.row.status === 'ACTIVE' ? <ArchiveIcon /> : <UnarchiveIcon />}
+          >
+            {params.row.status === 'ACTIVE' ? 'Dropout' : 'Activate'}
           </Button>
           <Button
             variant="contained"
@@ -376,6 +398,16 @@ const StudentManager = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Tabs */}
+      <Tabs
+        value={tabValue}
+        onChange={(e, newValue) => setTabValue(newValue)}
+        sx={{ mb: 2 }}
+      >
+        <Tab label="Active" value="ACTIVE" />
+        <Tab label="Dropped Out" value="DROPPED_OUT" />
+      </Tabs>
 
       {/* Data Grid */}
       <Paper sx={{ height: 500, width: '100%' }}>

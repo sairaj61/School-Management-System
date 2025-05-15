@@ -9,7 +9,7 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from auth.auth_model import User, Base
 
 # Detect environment: default to SQLite
-DB_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres")
+DB_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/TEST")
 print(f"Using database URL: {DB_URL}")
 
 # Create engine dynamically

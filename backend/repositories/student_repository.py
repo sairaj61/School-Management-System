@@ -181,14 +181,13 @@ class StudentRepository:
         result = await self.db.execute(select(Student).filter(Student.section_id == section_id))
         return result.scalars().all()
 
-    async def student_dropout(self, student_id: UUID):
+    async def update_student_status(self, student_id: UUID, status: StudentStatus):
         try:
             db_student = await self.get_by_id(student_id)
             if not db_student:
                 raise HTTPException(status_code=404, detail="Student not found")
 
-            db_student.status = StudentStatus.DROPPED_OFF.value  # Use enum value
-
+            db_student.status = status.value
             await self.db.commit()
             await self.db.refresh(db_student)
             return db_student
@@ -197,5 +196,5 @@ class StudentRepository:
             await self.db.rollback()
             raise HTTPException(
                 status_code=500,
-                detail=f"An error occurred while dropping out the student: {str(e)}"
+                detail=f"Error updating student status: {str(e)}"
             )

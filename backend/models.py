@@ -31,7 +31,7 @@ class RecordStatus(str, PyEnum):
 
 class StudentStatus(PyEnum):
     ACTIVE = "ACTIVE"
-    DROPPED_OFF = "DROPPED_OFF"
+    DROPPED_OUT = "DROPPED_OUT"
     ARCHIVED = "ARCHIVED"
     DELETED = "DELETED"
 
